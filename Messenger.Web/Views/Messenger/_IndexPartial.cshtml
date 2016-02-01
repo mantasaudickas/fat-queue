@@ -1,0 +1,47 @@
+﻿@model Messenger.Web.Models.MainViewModel
+
+<h3>Status</h3>
+<table>
+    <tr>
+        @foreach (var status in Model.Status)
+        {
+            <td>@status.Status : @status.MessageCount</td>
+        }
+    </tr>
+</table>
+
+<h3>Queues</h3>
+<table>
+    <tr class="title">
+        <td>Id</td>
+        <td>Actions</td>
+        <td>Name</td>
+        <td>Processed</td>
+        <td>Started</td>
+        <td>Process Name</td>
+        <td>Retries</td>
+        <td>Next Try</td>
+        <td>MessageCount</td>
+        <td>Error</td>
+    </tr>
+
+    @foreach (var queue in Model.Queues)
+    {
+        <tr>
+            <td>@queue.QueueId</td>
+            <td>@if (!string.IsNullOrEmpty(queue.ProcessName))
+                {
+                    @Html.ActionLink("Release", "ReleaseProcessLock", "Messenger", new {processName = @queue.ProcessName}, null);
+                }
+            </td>
+            <td>@queue.Name</td>
+            <td>@queue.ProcessedAt</td>
+            <td>@queue.ProcessingStarted</td>
+            <td>@queue.ProcessName</td>
+            <td>@queue.Retries</td>
+            <td>@queue.NextTryTime</td>
+            <td>@queue.MessageCount</td>
+            <td>@queue.Error</td>
+        </tr>
+    }
+</table>

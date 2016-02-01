@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>@ViewBag.Title - Messenger</title>
+    <link rel="icon" href="/Content/images/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" type="text/css" href="~/Content/css/main.css">
+    <base href="/"/>
+</head>
+<body>
+    <div class="main-menu">
+        <div>@Html.ActionLink("Home", "Index", "Messenger");</div>
+        <div>@Html.ActionLink("Active", "Active", "Messenger");</div>
+        <div>@Html.ActionLink("Failed messages", "FailedMessages", "Messenger");</div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        @RenderSection("SPAViews", required: false)
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - Messenger</p>
+        </footer>
+    </div>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

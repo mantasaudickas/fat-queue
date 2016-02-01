@@ -1,0 +1,29 @@
+*. Queue statistics
+    - how many messages were processed
+    - average processing time for different handler types
+    - how long took to process full queue
+        - from first arrived message to the empty queue (ProcessingStarted is set) until queue is empty (ProcessingStarted set to null)
+        - include how many messages were processed
+    
+*. Queue cleanup
+    - remove empty queues older than configured time interval
+    
+*. Better logging
+
+*. MVC page host
+    - provides process control
+        - stop/start all processors
+        - pause/continue all processors
+        - check statistics
+        - check current status of each server
+        - check messages in each queues
+
+*. Clean code
+
+*. Dependencies between queues
+
+*. Recovery strategies
+    - Block queue if message fails
+    - Move failed message to the end of queue
+    - Move failed messages to another place to review later
+    

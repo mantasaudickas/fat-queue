@@ -1,0 +1,19 @@
+﻿@model Messenger.Web.Models.ActiveProcessesModel
+
+<h3>Active processes</h3>
+<table>
+    <tr class="title">
+        <td>ProcessName</td>
+        <td>LastHeartbeat</td>
+        <td>Actions</td>
+    </tr>
+
+    @foreach (var queue in Model.ActiveProcesses)
+    {
+        <tr>
+            <td>@queue.ProcessName</td>
+            <td>@queue.LastHeartbeat</td>
+            <td>@Html.ActionLink("Release", "ReleaseProcessLock", "Messenger", new {processName=@queue.ProcessName}, null)</td>
+        </tr>
+    }
+</table>

@@ -1,0 +1,35 @@
+﻿{
+	"Values": {
+		"$type": "System.Linq.Enumerable+WhereSelectArrayIterator`2[[System.Int32, mscorlib],[FatQueue.Messenger.Tests.UnitTests.JsonSerializerShould+DateTimeContainer, FatQueue.Messenger.Tests]], System.Core",
+		"$values": [{
+			"Now": "2015-08-06T08:52:27.3267284+03:00"
+		},
+		{
+			"Now": "2015-08-07T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-08T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-09T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-10T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-11T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-12T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-13T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-14T08:52:27.3377305+03:00"
+		},
+		{
+			"Now": "2015-08-05T08:52:27.3377305+03:00"
+		}]
+	}
+}

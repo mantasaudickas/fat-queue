@@ -1,0 +1,11 @@
+﻿{
+	"Type": "Visma.School.Common.FatQueue.FatQueueProxy`1[[Visma.School.SelfService.Contracts.Events.Groups.PupilsAssignedToMainTeacherEvent, Visma.School.SelfService.Contracts, Version=1.1.725.0, Culture=neutral, PublicKeyToken=null]], Visma.School.Common.FatQueue, Version=1.1.725.0, Culture=neutral, PublicKeyToken=null",
+	"Method": "Send",
+	"ParameterTypes": ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+	"Visma.School.SelfService.Contracts.Events.Groups.PupilsAssignedToMainTeacherEvent, Visma.School.SelfService.Contracts, Version=1.1.725.0, Culture=neutral, PublicKeyToken=null",
+	"System.Guid, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+	"System.Collections.Generic.IList`1[[Visma.School.Common.Proxies.UrlParameter, Visma.School.Common, Version=1.1.725.0, Culture=neutral, PublicKeyToken=null]], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+	"Visma.School.Common.Proxies.ProxyHttpMethod, Visma.School.Common, Version=1.1.725.0, Culture=neutral, PublicKeyToken=null"],
+	"Arguments": ["\"api/groups/years/mainTeacherGroups/pupils\"","{
+		\"IdSchoolYear\":\"b4f1e0e0-74d8-4fd0-9357-73be22137d61\",\"MainTeacherIdGroup\":\"39107b48-2333-4663-b7ee-a32b6412a8a6\",\"PupilsIdPerson\":{\"$type\":\"System.Linq.Enumerable+<WhereSelectListIterator>d__81`2[[Visma.School.Contracts.PupilInYear.PupilInYearIdentity, Visma.School.Contracts],[System.Guid, mscorlib]], System.Core\",\"$values\":[\"47890686-f89d-4a1a-9bb7-3fea3f99cc8e\"]},\"CorrelationId\":\"19aff52c-b66e-42d3-b328-6f15828c26ef\"}",
+		"\"19aff52c-b66e-42d3-b328-6f15828c26ef\"","[]","1"]}

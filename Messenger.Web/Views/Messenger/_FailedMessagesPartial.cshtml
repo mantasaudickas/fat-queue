@@ -1,0 +1,48 @@
+﻿@model Messenger.Web.Models.FailedMessageModel
+
+@if (Model.PageNo == 1 && (Model.Messages == null || !Model.Messages.Any()))
+{
+    <h3>No failed messages!</h3>
+}
+else
+{
+    <h3>Failed messages</h3>
+    <div>@Html.ActionLink("Move all failed messages to processing queue", "RecoverFailedMessages", "Messenger")</div>
+    <br/>
+    <table>
+        <tr>
+            <td>Id</td>
+            <td>Actions</td>
+            <td>CreateDate</td>
+            <td>FailedDate</td>
+            <td>ContentType</td>
+            <td>Context</td>
+            <td>Content</td>
+            <td>Error</td>
+        </tr>
+
+        @foreach (var message in Model.Messages)
+        {
+            <tr>
+                <td>@message.FailedMessageId</td>
+                <td>@Html.ActionLink("Recover", "RecoverFailedMessage", "Messenger", new { messageId = message.FailedMessageId }, null)</td>
+                <td>@message.CreateDate</td>
+                <td>@message.FailedDate</td>
+                <td>@message.ContentType</td>
+                <td>@message.Context</td>
+                <td>@message.Content</td>
+                <td>@message.Error</td>
+            </tr>
+        }
+    </table>
+
+    if (Model.PageNo > 1)
+    {
+        <div>@Html.ActionLink("Previous", "FailedMessages", "Messenger", new { pageNo = Model.PageNo - 1, pageSize = Model.PageSize }, null)</div>
+    }
+
+    if (Model.Messages != null && Model.Messages.Count() == Model.PageSize)
+    {
+        <div>@Html.ActionLink("Next", "FailedMessages", "Messenger", new {pageNo = Model.PageNo + 1, pageSize = Model.PageSize}, null)</div>
+    }
+}
