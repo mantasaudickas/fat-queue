@@ -67,6 +67,7 @@ namespace FatQueue.Messenger.Core
         public string Content { get; set; }
         public string Error { get; set; }
         public string Context { get; set; }
+        public Guid? BatchKey { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime FailedDate { get; set; }
     }

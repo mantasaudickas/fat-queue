@@ -27,16 +27,16 @@ namespace FatQueue.Messenger.Tests
                 };
 
                 var executor = new LongRunningTestExecutor();
-                //executor.Execute(clientSettings);
+                executor.Execute(clientSettings);
 
-                var failingExecutor = new FailingMessagesTestExecutor();
-                failingExecutor.Execute(ConnectionString);
+                //var failingExecutor = new FailingMessagesTestExecutor();
+                //failingExecutor.Execute(ConnectionString);
 
                 //var signalRExecutor = new SignalRScriptExecutor();
                 //signalRExecutor.Execute(ConnectionString);
 
-                var manualPublisherExecutor = new ManualPublisherExecutor();
-                manualPublisherExecutor.Execute(clientSettings);
+                //var manualPublisherExecutor = new ManualPublisherExecutor();
+                //manualPublisherExecutor.Execute(clientSettings);
             }
             catch (Exception exc)
             {
@@ -58,7 +58,7 @@ namespace FatQueue.Messenger.Tests
             {
                 ConnectionString = connectionString,
                 CheckInterval = TimeSpan.FromSeconds(10),
-                MessageBatchSize = 10,
+                MessageBatchSize = 1,
                 MaxProcessCount = 10,
                 Logger = new ConsoleLogger(true),
                 CompletedMessages = new CompletedMessages { Archive = true, Cleanup = true, CleanOlderThanUtc = () => DateTime.UtcNow.AddMinutes(-5) },

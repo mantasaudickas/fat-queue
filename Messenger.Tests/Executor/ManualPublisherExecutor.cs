@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using FatQueue.Messenger.Core;
 using FatQueue.Messenger.MsSql;
 using FatQueue.Messenger.Tests.Events;
 using FatQueue.Messenger.Tests.Handlers;
@@ -8,6 +10,7 @@ namespace FatQueue.Messenger.Tests.Executor
     public class ManualPublisherExecutor
     {
         private static readonly string[] Queues = { "Q0", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9" };
+        private static readonly Queue<Guid> Identities = new Queue<Guid>();
 
         public void Execute(MsSqlSettings clientSettings)
         {
@@ -22,10 +25,31 @@ namespace FatQueue.Messenger.Tests.Executor
                 }
                 else
                 {
+                    var messengerClient = new MsSqlMessenger(clientSettings);
+
+                    int delayExecution = 0;
+                    Guid? identity = null;
                     int queueIndex;
                     if (key.KeyChar >= '0' && key.KeyChar <= '9')
                     {
                         queueIndex = (key.KeyChar-'0');
+                        delayExecution = 30;
+                        identity = Guid.NewGuid();
+                        Identities.Enqueue(identity.Value);
+                    }
+                    else if (key.Key == ConsoleKey.Delete)
+                    {
+                        var identityToCancel = Identities.Dequeue();
+                        var canceled = messengerClient.Cancel(identityToCancel);
+                        if (canceled)
+                        {
+                            Console.WriteLine("Canceled: {0}", identityToCancel);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unable to cancel anymore: {0}", identityToCancel);
+                        }
+                        continue;
                     }
                     else
                     {
@@ -34,12 +58,18 @@ namespace FatQueue.Messenger.Tests.Executor
 
                     var queueName = Queues[queueIndex];
 
-                    var messengerClient = new MsSqlMessenger(clientSettings);
-                    messengerClient.PublishAsFirst<FatQueuePrintMessageEventHandler>(handler => handler.Handle(
-                        new FatQueuePrintMessageEvent
-                        {
-                            Message = new CustomMessage {Message = "Published from main manually"}
-                        }), queueName);
+                    var publishSettings = new PublishSettings
+                    {
+                        DelayExecutionInSeconds = delayExecution,
+                        Identity = identity
+                    };
+
+                    var request = new FatQueuePrintMessageEvent
+                    {
+                        Message = new CustomMessage { Message = "Published from main manually. Delay: " + delayExecution }
+                    };
+
+                    messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), queueName, publishSettings);
 
                     Console.WriteLine("Message published to queue {0}", queueName);
                 }

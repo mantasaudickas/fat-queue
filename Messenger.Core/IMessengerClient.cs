@@ -13,9 +13,6 @@ namespace FatQueue.Messenger.Core
         void Publish<T>(Expression<Action<T>> methodCall, string queueName = null, PublishSettings publishSettings = null);
 
         [UsedImplicitly]
-        void PublishAsFirst<T>(Expression<Action<T>> methodCall, QueueName queueName, PublishSettings publishSettings = null);
-
-        [UsedImplicitly]
-        void PublishAsFirst<T>(Expression<Action<T>> methodCall, string queueName = null, PublishSettings publishSettings = null);
+        bool Cancel(Guid identity);
     }
 }

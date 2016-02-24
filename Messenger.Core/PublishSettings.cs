@@ -5,20 +5,26 @@ namespace FatQueue.Messenger.Core
 {
     public class PublishSettings
     {
-        public int MaxRetriesBeforeFail { get; set; }
         public RecoveryMode RecoveryMode { get; set; }
         public TransactionIsolationLevel JobIsolationLevel { get; set; }
         public TimeSpan JobTimeout { get; set; }
+        public int MaxRetriesBeforeFail { get; set; }
+        public int DelayExecutionInSeconds { get; set; }
         public bool DiscardWhenComplete { get; set; }
+        public bool HighestPriority { get; set; }
+        public Guid? Identity { get; set; }
 
-        public static readonly PublishSettings Default = new PublishSettings
+        public PublishSettings()
         {
-            MaxRetriesBeforeFail = 2,
-            RecoveryMode = RecoveryMode.MarkAsFailed,
-            JobIsolationLevel = TransactionIsolationLevel.ReadCommitted,
-            JobTimeout = TimeSpan.FromMinutes(10),
-            DiscardWhenComplete = false
-        };
+            RecoveryMode = RecoveryMode.MarkAsFailed;
+            JobIsolationLevel = TransactionIsolationLevel.ReadCommitted;
+            JobTimeout = TimeSpan.FromMinutes(10);
+            MaxRetriesBeforeFail = 2;
+            DelayExecutionInSeconds = 0;
+            DiscardWhenComplete = false;
+            HighestPriority = false;
+            Identity = null;
+        }
     }
 
     /// <summary>

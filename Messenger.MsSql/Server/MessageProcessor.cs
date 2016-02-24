@@ -191,7 +191,7 @@ namespace FatQueue.Messenger.MsSql.Server
                         break;
                     case RecoveryMode.MarkAsFailed:
                         Repository.CopyMessageToFailed(messageId);
-                        Repository.RemoveFirstQueueMessage(messageId);
+                        Repository.RemoveMessage(messageId);
                         break;
                     default:
                         // should not happen
@@ -220,7 +220,7 @@ namespace FatQueue.Messenger.MsSql.Server
 
             if (messageContext.Settings == null)
             {
-                messageContext.Settings = PublishSettings.Default;
+                messageContext.Settings = new PublishSettings();
             }
 
             if (messageContext.Settings.MaxRetriesBeforeFail == 0)

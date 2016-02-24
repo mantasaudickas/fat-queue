@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using FatQueue.Messenger.Core;
 using FatQueue.Messenger.MsSql;
 using FatQueue.Messenger.Tests.Events;
 using FatQueue.Messenger.Tests.Handlers;
@@ -11,6 +13,17 @@ namespace FatQueue.Messenger.Tests.Executor
     public class LongRunningTestExecutor
     {
         private static readonly string[] Queues = {"Q0", "Q1", "Q2", "Q3", "Q4"};
+        private static readonly ConcurrentQueue<Guid> Identities = new ConcurrentQueue<Guid>();
+
+        static LongRunningTestExecutor()
+        {
+            int count = Environment.ProcessorCount *2 ;
+            Queues = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                Queues[i] = "Q" + i;
+            }
+        }
 
         public void Execute(MsSqlSettings clientSettings)
         {
@@ -52,6 +65,19 @@ namespace FatQueue.Messenger.Tests.Executor
                     {
                         taskList.RemoveAt(i);
                     }
+
+                    if (Identities.Count > 0)
+                    {
+                        Guid identity;
+                        if (Identities.TryDequeue(out identity))
+                        {
+                            var messengerClient = new MsSqlMessenger(clientSettings);
+                            if (messengerClient.Cancel(identity))
+                            {
+                                Console.WriteLine("Canceled {0}", identity);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -67,11 +93,21 @@ namespace FatQueue.Messenger.Tests.Executor
             {
                 int messageId = i;
                 var messengerClient = new MsSqlMessenger(clientSettings);
-                messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(
-                    new FatQueuePrintMessageEvent
-                    {
-                        Message = new CustomMessage {Message = $"[{processId.ToString().PadLeft(3, '0')}] - {messageId}"}
-                    }), Queues[processId % queueCount]);
+
+                var request = new FatQueuePrintMessageEvent
+                {
+                    Message = new CustomMessage {Message = $"[{processId.ToString().PadLeft(3, '0')}] - {messageId}"}
+                };
+
+                var identity = Guid.NewGuid();
+                var publishSettings = new PublishSettings
+                {
+                    Identity = identity,
+                    DelayExecutionInSeconds = i % 10 == 0 ? 30 : 0
+                };
+                Identities.Enqueue(identity);
+
+                messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), Queues[processId % queueCount], publishSettings);
             }
         }
     }
