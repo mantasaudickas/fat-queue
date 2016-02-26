@@ -7,6 +7,6 @@ namespace Messenger.Web.Models
     {
         public int PageNo { get; set; }
         public int PageSize { get; set; }
-        public IEnumerable<FailedMessage> Messages { get; set; }
+        public IEnumerable<FailedMessageDetails> Messages { get; set; }
     }
 }

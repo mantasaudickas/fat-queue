@@ -36,9 +36,34 @@ namespace FatQueue.Messenger.MsSql
             return _repository.GetActiveProcesses();
         }
 
-        public IEnumerable<FailedMessage> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to)
+        public IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? @from, DateTime? to)
+        {
+            return _repository.GetCompletedMessages(pageNo, pageSize, from, to);
+        }
+
+        public IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? from, DateTime? to)
+        {
+            return _repository.GetMessages(queueId, pageNo, pageSize, from, to);
+        } 
+
+        public IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to)
         {
             return _repository.GetFailedMessages(pageNo, pageSize, from, to);
+        }
+
+        public MessageDetails GetMessage(int messageId)
+        {
+            return _repository.GetMessage(messageId);
+        }
+
+        public CompletedMessageDetails GetCompletedMessage(int messageId)
+        {
+            return _repository.GetCompletedMessage(messageId);
+        }
+
+        public FailedMessageDetails GetFailedMessage(int messageId)
+        {
+            return _repository.GetFailedMessage(messageId);
         }
 
         public void ReenqueueFailedMessages(int[] ids, string queueName = null)

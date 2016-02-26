@@ -376,28 +376,6 @@ namespace FatQueue.Messenger.MsSql.Orm
             }
         }
 
-        public IEnumerable<FailedMessage> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to)
-        {
-            const string sql = "select *  " +
-                               "from Messenger.FailedMessages " +
-                               "where CreateDate between @timeFrom and @timeTo " +
-                               "order by CreateDate asc " +
-                               "offset @offset rows " +
-                               "fetch next @pageSize rows only";
-
-            int offset = (pageNo - 1)*pageSize;
-
-            var timeFrom = from.GetValueOrDefault(SqlDateTime.MinValue.Value);
-            var timeTo = to.GetValueOrDefault(DateTime.UtcNow);
-
-            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
-            {
-                var statuses = db.Connection.Query<FailedMessage>(sql, new {offset, pageSize, timeFrom, timeTo});
-                db.Complete();
-                return statuses;
-            }
-        }
-
         public void PurgeCompletedMessages(DateTime olderThan)
         {
             const string sql = "delete from Messenger.CompletedMessages where CompletedDate < @olderThan";
@@ -440,6 +418,114 @@ namespace FatQueue.Messenger.MsSql.Orm
                 db.Connection.Execute(sql, new {queueId, id = filter.ToArray()});
                 db.Connection.Execute(sqlDelete, new { queueId, id = filter.ToArray() });
                 db.Complete();
+            }
+        }
+
+        public IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? @from, DateTime? to)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.Messages " +
+                               "where QueueId = @queueId and StartDate between @timeFrom and @timeTo " +
+                               "order by StartDate asc " +
+                               "offset @offset rows " +
+                               "fetch next @pageSize rows only";
+
+            int offset = (pageNo - 1) * pageSize;
+
+            var timeFrom = from.GetValueOrDefault(SqlDateTime.MinValue.Value);
+            var timeTo = to.GetValueOrDefault(DateTime.UtcNow);
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<MessageDetails>(sql, new { queueId, offset, pageSize, timeFrom, timeTo });
+                db.Complete();
+                return statuses;
+            }
+        }
+
+        public IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? @from, DateTime? to)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.CompletedMessages " +
+                               "where CreateDate between @timeFrom and @timeTo " +
+                               "order by CreateDate asc " +
+                               "offset @offset rows " +
+                               "fetch next @pageSize rows only";
+
+            int offset = (pageNo - 1) * pageSize;
+
+            var timeFrom = from.GetValueOrDefault(SqlDateTime.MinValue.Value);
+            var timeTo = to.GetValueOrDefault(DateTime.UtcNow);
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<CompletedMessageDetails>(sql, new { offset, pageSize, timeFrom, timeTo });
+                db.Complete();
+                return statuses;
+            }
+        }
+
+        public IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.FailedMessages " +
+                               "where CreateDate between @timeFrom and @timeTo " +
+                               "order by CreateDate asc " +
+                               "offset @offset rows " +
+                               "fetch next @pageSize rows only";
+
+            int offset = (pageNo - 1) * pageSize;
+
+            var timeFrom = from.GetValueOrDefault(SqlDateTime.MinValue.Value);
+            var timeTo = to.GetValueOrDefault(DateTime.UtcNow);
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<FailedMessageDetails>(sql, new { offset, pageSize, timeFrom, timeTo });
+                db.Complete();
+                return statuses;
+            }
+        }
+
+        public MessageDetails GetMessage(int messageId)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.Messages " +
+                               "where MessageId = @messageId ";
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<MessageDetails>(sql, new { messageId });
+                db.Complete();
+                return statuses.FirstOrDefault();
+            }
+        }
+
+        public CompletedMessageDetails GetCompletedMessage(int messageId)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.CompletedMessages " +
+                               "where CompletedMessageId = @messageId ";
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<CompletedMessageDetails>(sql, new { messageId });
+                db.Complete();
+                return statuses.FirstOrDefault();
+            }
+        }
+
+        public FailedMessageDetails GetFailedMessage(int messageId)
+        {
+            const string sql = "select *  " +
+                               "from Messenger.FailedMessages " +
+                               "where FailedMessageId = @messageId ";
+
+            using (var db = new Database(_connectionString, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            {
+                var statuses = db.Connection.Query<FailedMessageDetails>(sql, new { messageId });
+                db.Complete();
+                return statuses.FirstOrDefault();
             }
         }
     }

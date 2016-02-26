@@ -16,7 +16,22 @@ namespace FatQueue.Messenger.Core
         IEnumerable<ProcessStatus> GetActiveProcesses();
 
         [UsedImplicitly]
-        IEnumerable<FailedMessage> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
+        IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? from, DateTime? to);
+
+        [UsedImplicitly]
+        IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
+
+        [UsedImplicitly]
+        IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
+
+        [UsedImplicitly]
+        MessageDetails GetMessage(int messageId);
+
+        [UsedImplicitly]
+        CompletedMessageDetails GetCompletedMessage(int messageId);
+
+        [UsedImplicitly]
+        FailedMessageDetails GetFailedMessage(int messageId);
 
         [UsedImplicitly]
         void ReenqueueFailedMessages(int[] ids, string queueName = null);
@@ -60,15 +75,39 @@ namespace FatQueue.Messenger.Core
     }
 
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public class FailedMessage
+    public class FailedMessageDetails
     {
         public int FailedMessageId { get; set; }
         public string ContentType { get; set; }
         public string Content { get; set; }
+        public DateTime CreateDate { get; set; }
         public string Error { get; set; }
         public string Context { get; set; }
-        public Guid? BatchKey { get; set; }
-        public DateTime CreateDate { get; set; }
         public DateTime FailedDate { get; set; }
+        public Guid? Identity { get; set; }
+    }
+
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
+    public class CompletedMessageDetails
+    {
+        public int CompletedMessageId { get; set; }
+        public string ContentType { get; set; }
+        public string Content { get; set; }
+        public DateTime CreateDate { get; set; }
+        public DateTime CompletedDate { get; set; }
+        public string Context { get; set; }
+        public Guid? Identity { get; set; }
+    }
+
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
+    public class MessageDetails
+    {
+        public int MessageId { get; set; }
+        public int QueueId { get; set; }
+        public string ContentType { get; set; }
+        public string Content { get; set; }
+        public DateTime StartDate { get; set; }
+        public string Context { get; set; }
+        public Guid? Identity { get; set; }
     }
 }
