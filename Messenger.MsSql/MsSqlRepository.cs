@@ -10,7 +10,6 @@ using FatQueue.Messenger.Core;
 using FatQueue.Messenger.Core.Data;
 using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.Core.Orm;
-using JetBrains.Annotations;
 using IsolationLevel = System.Transactions.IsolationLevel;
 using Transaction = FatQueue.Messenger.Core.Orm.Transaction;
 
@@ -20,7 +19,7 @@ namespace FatQueue.Messenger.MsSql
     {
         private readonly Func<IDbConnection> _connectionFactory;
 
-        public MsSqlRepository([NotNull] SqlSettings settings)
+        public MsSqlRepository(SqlSettings settings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
             _connectionFactory = () => new SqlConnection(settings.ConnectionString);

@@ -1,9 +1,7 @@
 ﻿using System;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core.Expressions
 {
-    [UsedImplicitly]
     // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
     public class JobActivator : IJobActivator
     {

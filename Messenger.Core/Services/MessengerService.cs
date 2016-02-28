@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using FatQueue.Messenger.Core.Components;
 using FatQueue.Messenger.Core.Database;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core.Services
 {
-    [UsedImplicitly]
     public class MessengerService : IMessengerService
     {
         private readonly ILogger _logger;

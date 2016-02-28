@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace FatQueue.Messenger.Core.Tools
@@ -70,7 +69,6 @@ namespace FatQueue.Messenger.Core.Tools
             return JsonConvert.DeserializeObject(value, instanceType, settings);
         }
 
-        [UsedImplicitly]
         public static string ToJson<T>(T data)
         {
             return new JsonSerializer().Serialize(data);

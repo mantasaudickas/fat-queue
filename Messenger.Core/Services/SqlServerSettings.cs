@@ -1,12 +1,10 @@
 ﻿using System;
 using FatQueue.Messenger.Core.Database;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core.Services
 {
     public class SqlServerSettings : SqlSettings
     {
-        [UsedImplicitly]
         public IJobActivator JobActivator { get; set; }
         public TimeSpan? CheckInterval { get; set; }
 

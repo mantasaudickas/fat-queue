@@ -1,8 +1,5 @@
-﻿using JetBrains.Annotations;
-
-namespace FatQueue.Messenger.Core.Data
+﻿namespace FatQueue.Messenger.Core.Data
 {
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class QueueInfo
     {
         public string Name { get; set; }

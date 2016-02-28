@@ -1,9 +1,7 @@
 ﻿using System;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core.Data
 {
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class MessageInfo
     {
         public int MessageId { get; set; }

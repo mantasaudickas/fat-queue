@@ -1,39 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core
 {
     public interface IMessengerService
     {
-        [UsedImplicitly]
         IEnumerable<QueueStatus> GetQueueStatuses();
 
-        [UsedImplicitly]
         IEnumerable<MessengerStatus> GetMessengerStatus();
 
-        [UsedImplicitly]
         IEnumerable<ProcessStatus> GetActiveProcesses();
 
-        [UsedImplicitly]
         IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? from, DateTime? to);
 
-        [UsedImplicitly]
         IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
 
-        [UsedImplicitly]
         IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
 
-        [UsedImplicitly]
         MessageDetails GetMessage(int messageId);
 
-        [UsedImplicitly]
         CompletedMessageDetails GetCompletedMessage(int messageId);
 
-        [UsedImplicitly]
         FailedMessageDetails GetFailedMessage(int messageId);
 
-        [UsedImplicitly]
         void ReenqueueFailedMessages(int[] ids, string queueName = null);
 
         void RecoverFailedMessages();
@@ -41,7 +30,6 @@ namespace FatQueue.Messenger.Core
         void ReleaseProcessLock(string processName);
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class QueueStatus
     {
         public int QueueId { get; set; }
@@ -55,7 +43,6 @@ namespace FatQueue.Messenger.Core
         public int MessageCount { get; set; }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class MessengerStatus
     {
         public string Status { get; set; }
@@ -67,14 +54,12 @@ namespace FatQueue.Messenger.Core
         }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class ProcessStatus
     {
         public string ProcessName { get; set; }
         public DateTime LastHeartbeat { get; set; }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class FailedMessageDetails
     {
         public int FailedMessageId { get; set; }
@@ -87,7 +72,6 @@ namespace FatQueue.Messenger.Core
         public Guid? Identity { get; set; }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class CompletedMessageDetails
     {
         public int CompletedMessageId { get; set; }
@@ -99,7 +83,6 @@ namespace FatQueue.Messenger.Core
         public Guid? Identity { get; set; }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class MessageDetails
     {
         public int MessageId { get; set; }

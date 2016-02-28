@@ -1,5 +1,4 @@
 ﻿using System;
-using JetBrains.Annotations;
 
 namespace FatQueue.Messenger.Core
 {
@@ -33,7 +32,6 @@ namespace FatQueue.Messenger.Core
     /// <remarks>
     /// Enum is copied from System.Transactions just to avoid reference to it for clients using this component
     /// </remarks>
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public enum TransactionIsolationLevel
     {
         Serializable,
