@@ -1,10 +1,10 @@
 ﻿using System;
 using JetBrains.Annotations;
 
-namespace FatQueue.Messenger.MsSql.Data
+namespace FatQueue.Messenger.Core.Data
 {
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    internal class MessageInfo
+    public class MessageInfo
     {
         public int MessageId { get; set; }
         public string Content { get; set; }

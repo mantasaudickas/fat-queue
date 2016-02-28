@@ -41,6 +41,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -56,6 +57,12 @@
     <Compile Include="Components\ExceptionExtensions.cs" />
     <Compile Include="Components\TaskExtensions.cs" />
     <Compile Include="Components\TypeExtensions.cs" />
+    <Compile Include="Database\SqlSettings.cs" />
+    <Compile Include="Data\Message.cs" />
+    <Compile Include="Data\MessageContext.cs" />
+    <Compile Include="Data\MessageInfo.cs" />
+    <Compile Include="Data\QueueInfo.cs" />
+    <Compile Include="Data\ResultState.cs" />
     <Compile Include="Expressions\ExpressionExecutor.cs" />
     <Compile Include="Expressions\MessageActionContainer.cs" />
     <Compile Include="Expressions\ExpressionSerializer.cs" />
@@ -83,6 +90,10 @@
     <Compile Include="ILogger.cs" />
     <Compile Include="IMessengerClient.cs" />
     <Compile Include="IMessengerService.cs" />
+    <Compile Include="IRepository.cs" />
+    <Compile Include="Orm\Database.cs" />
+    <Compile Include="Orm\ITransaction.cs" />
+    <Compile Include="Orm\Transaction.cs" />
     <Compile Include="PublishSettings.cs" />
     <Compile Include="QueueName.cs" />
     <Compile Include="RecoveryMode.cs" />
@@ -90,6 +101,16 @@
     <Compile Include="ISerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueueSettingsScope.cs" />
+    <Compile Include="Database\ServerSettings.cs" />
+    <Compile Include="Services\CleanupService.cs" />
+    <Compile Include="Services\MessageProcessor.cs" />
+    <Compile Include="Services\Messenger.cs" />
+    <Compile Include="Services\MessengerServer.cs" />
+    <Compile Include="Services\MessengerService.cs" />
+    <Compile Include="Services\ProcessNameFormat.cs" />
+    <Compile Include="Services\RepositoryFactory.cs" />
+    <Compile Include="Services\SqlServerSettings.cs" />
+    <Compile Include="Services\TaskMonitoringService.cs" />
     <Compile Include="Tools\ConditionalLogger.cs" />
     <Compile Include="Tools\ConsoleLogger.cs" />
     <Compile Include="Tools\JsonSerializer.cs" />

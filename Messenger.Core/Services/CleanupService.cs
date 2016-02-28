@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using FatQueue.Messenger.Core;
 using FatQueue.Messenger.Core.Components;
-using FatQueue.Messenger.MsSql.Orm;
 
-namespace FatQueue.Messenger.MsSql.Server
+namespace FatQueue.Messenger.Core.Services
 {
-    internal class CleanupService
+    public class CleanupService
     {
         private readonly ILogger _logger;
-        private readonly MsSqlRepository _repository;
+        private readonly IRepository _repository;
 
-        public CleanupService(string connectionString, ILogger logger)
+        public CleanupService(ILogger logger, IRepository repository)
         {
-            _repository = new MsSqlRepository(connectionString);
+            _repository = repository;
             _logger = logger;
         }
 

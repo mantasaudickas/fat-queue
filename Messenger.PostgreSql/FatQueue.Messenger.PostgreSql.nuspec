@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+    <metadata>
+        <id>$id$</id>
+        <version>$version$</version>
+        <title>$title$</title>
+        <authors>$author$</authors>
+        <owners>$author$</owners>
+        <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+        <projectUrl>https://gitlab.com/mantas.audickas/fat-queue</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>$description$</description>
+        <copyright>Copyright 2015</copyright>
+        <tags>Queue Messenger PostgreSql</tags>
+        <dependencies>
+          <dependency id="FatQueue.Messenger.Core" version="1.0.0" />
+        </dependencies>        
+    </metadata>
+    <files>
+      <file src="Install.sql" target="tools" /> 
+    </files>    
+</package>

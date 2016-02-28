@@ -5,7 +5,7 @@ namespace FatQueue.Messenger.Core.Components
 {
     public abstract class CommonComponent
     {
-        internal protected const string DefaultQueueName = "FatQueue.Messenger.Default";
+        protected internal const string DefaultQueueName = "FatQueue.Messenger.Default";
 
         protected ILogger Logger { get; private set; }
         protected ISerializer Serializer { get; private set; }

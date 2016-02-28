@@ -1,9 +1,8 @@
-﻿using System;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
-namespace FatQueue.Messenger.MsSql.Data
+namespace FatQueue.Messenger.Core.Data
 {
-    internal class Message
+    public class Message
     {
         public int QueueId { [UsedImplicitly] get; set; }
         public string ContentType { [UsedImplicitly] get; set; }

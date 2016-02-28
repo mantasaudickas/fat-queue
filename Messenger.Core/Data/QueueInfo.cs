@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace FatQueue.Messenger.MsSql.Data
+namespace FatQueue.Messenger.Core.Data
 {
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class QueueInfo

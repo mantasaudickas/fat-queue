@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
 using System.Transactions;
 using IsolationLevel = System.Transactions.IsolationLevel;
 
-namespace FatQueue.Messenger.MsSql.Orm
+namespace FatQueue.Messenger.Core.Orm
 {
-    internal class Database : IDisposable
+    public class Database : IDisposable
     {
-        private readonly string _connectionString;
+        private readonly Func<IDbConnection> _createConnection;
         private readonly TransactionScope _transactionScope;
         private IDbConnection _connection;
 
         public Database(
-            string connectionString, 
+            Func<IDbConnection> createConnection, 
             TransactionScopeOption? transactionType = null, 
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
-            _connectionString = connectionString;
+            _createConnection = createConnection;
 
             if (!transactionType.HasValue)
                 return;
@@ -41,7 +40,7 @@ namespace FatQueue.Messenger.MsSql.Orm
             {
                 if (_connection == null)
                 {
-                    _connection = new SqlConnection(_connectionString);
+                    _connection = _createConnection();
                     _connection.Open();
                 }
                 return _connection;

@@ -1,6 +1,6 @@
-﻿namespace FatQueue.Messenger.MsSql.Server
+﻿namespace FatQueue.Messenger.Core.Database
 {
-    internal static class ServerSettings
+    public static class ServerSettings
     {
         public const int NextTryAfterFailInSeconds = 30;
         public const int MaxRetriesBeforeFail = 10;

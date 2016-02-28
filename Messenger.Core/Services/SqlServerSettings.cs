@@ -1,10 +1,10 @@
 ﻿using System;
-using FatQueue.Messenger.Core;
+using FatQueue.Messenger.Core.Database;
 using JetBrains.Annotations;
 
-namespace FatQueue.Messenger.MsSql
+namespace FatQueue.Messenger.Core.Services
 {
-    public class MsSqlServerSettings : MsSqlSettings
+    public class SqlServerSettings : SqlSettings
     {
         [UsedImplicitly]
         public IJobActivator JobActivator { get; set; }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using FatQueue.Messenger.Core;
+using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.MsSql;
+using FatQueue.Messenger.PostgreSql;
 using FatQueue.Messenger.Tests.Events;
 using FatQueue.Messenger.Tests.Handlers;
 
@@ -12,7 +14,7 @@ namespace FatQueue.Messenger.Tests.Executor
         private static readonly string[] Queues = { "Q0", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9" };
         private static readonly Queue<Guid> Identities = new Queue<Guid>();
 
-        public void Execute(MsSqlSettings clientSettings)
+        public void Execute(SqlSettings clientSettings)
         {
             var random = new Random();
             var finished = false;
@@ -25,7 +27,8 @@ namespace FatQueue.Messenger.Tests.Executor
                 }
                 else
                 {
-                    var messengerClient = new MsSqlMessenger(clientSettings);
+                    //var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
+                    var messengerClient = new Core.Services.Messenger(clientSettings, new PostgreSqlRepositoryFactory(clientSettings));
 
                     int delayExecution = 0;
                     Guid? identity = null;

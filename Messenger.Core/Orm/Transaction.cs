@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Transactions;
 
-namespace FatQueue.Messenger.MsSql.Orm
+namespace FatQueue.Messenger.Core.Orm
 {
-    internal class Transaction : ITransaction
+    public class Transaction : ITransaction
     {
         private CommittableTransaction _transaction;
         private TransactionScope _transactionScope;

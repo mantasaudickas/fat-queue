@@ -1,4 +1,5 @@
-﻿using FatQueue.Messenger.MsSql;
+﻿using FatQueue.Messenger.Core.Database;
+using FatQueue.Messenger.MsSql;
 using FatQueue.Messenger.Tests.Events;
 using FatQueue.Messenger.Tests.Handlers;
 
@@ -13,8 +14,8 @@ namespace FatQueue.Messenger.Tests.Executor
 
         private void ProcessTasks(string connectionString)
         {
-            var clientSettings = new MsSqlSettings { ConnectionString = connectionString };
-            var messengerClient = new MsSqlMessenger(clientSettings);
+            var clientSettings = new SqlSettings { ConnectionString = connectionString };
+            var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
 
             for (int i = 0; i < 1; ++i)
             {

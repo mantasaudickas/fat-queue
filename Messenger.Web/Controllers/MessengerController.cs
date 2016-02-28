@@ -15,7 +15,7 @@ namespace Messenger.Web.Controllers
             var settings = ConfigurationManager.ConnectionStrings["DefaultConnection"];
             var connectionString = settings.ConnectionString;
 
-            _messengerService = new MsSqlMessengerService(connectionString, new TraceLogger(false));
+            _messengerService = new MessengerService(connectionString, new TraceLogger(false));
         }
 
         // GET: Messenger

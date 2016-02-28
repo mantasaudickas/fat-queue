@@ -2,36 +2,34 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Transactions;
-using FatQueue.Messenger.Core;
 using FatQueue.Messenger.Core.Components;
+using FatQueue.Messenger.Core.Data;
+using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.Core.Expressions;
-using FatQueue.Messenger.MsSql.Data;
-using FatQueue.Messenger.MsSql.Orm;
 
-namespace FatQueue.Messenger.MsSql.Server
+namespace FatQueue.Messenger.Core.Services
 {
-    internal class MessageProcessor
+    public class MessageProcessor
     {
         private readonly ISerializer _serializer;
         private readonly IJobActivator _jobActivator;
 
-        public MessageProcessor(string connectionString, IJobActivator jobActivator, ISerializer serializer, ILogger logger)
+        public MessageProcessor(IJobActivator jobActivator, ISerializer serializer, ILogger logger, RepositoryFactory factory)
         {
-            if (string.IsNullOrWhiteSpace(connectionString)) throw new ArgumentNullException(nameof(connectionString));
             if (serializer == null) throw new ArgumentNullException(nameof(serializer));
             if (jobActivator == null) throw new ArgumentNullException(nameof(jobActivator));
 
             _serializer = serializer;
             _jobActivator = jobActivator;
 
-            Repository = new MsSqlRepository(connectionString);
-            Service = new MsSqlMessengerService(connectionString, logger);
+            Repository = factory.Create();
+            Service = new MessengerService(logger, factory);
             Logger = logger;
             
             Canceled = false;
         }
 
-        private MsSqlRepository Repository { get; }
+        private IRepository Repository { get; }
         private IMessengerService Service { get; }
         private ILogger Logger { get; }
         private bool Canceled { get; set; }

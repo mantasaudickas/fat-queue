@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Transactions;
 
-namespace FatQueue.Messenger.MsSql.Orm
+namespace FatQueue.Messenger.Core.Orm
 {
-    internal interface ITransaction : IDisposable
+    public interface ITransaction : IDisposable
     {
         void Complete();
         TransactionStatus? TransactionStatus { get; }

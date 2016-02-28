@@ -65,6 +65,7 @@
     <Compile Include="Handlers\FatQueueSignalREventHandler.cs" />
     <Compile Include="Handlers\IHandler.cs" />
     <Compile Include="Data\ShowQueueNameAndPublishAnotherRequest.cs" />
+    <Compile Include="IntegrationTests\PostgreSqlMessengerShould.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTests\JsonSerializerShould.cs" />
@@ -82,6 +83,10 @@
     <ProjectReference Include="..\Messenger.MsSql\FatQueue.Messenger.MsSql.csproj">
       <Project>{d222b5e4-3c85-42dd-9a63-e9f582fa472a}</Project>
       <Name>FatQueue.Messenger.MsSql</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Messenger.PostgreSql\FatQueue.Messenger.PostgreSql.csproj">
+      <Project>{dd150566-8b81-455b-8c84-838eb1261d33}</Project>
+      <Name>FatQueue.Messenger.PostgreSql</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

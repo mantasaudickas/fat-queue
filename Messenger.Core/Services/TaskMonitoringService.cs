@@ -2,21 +2,19 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FatQueue.Messenger.Core;
 using FatQueue.Messenger.Core.Components;
-using FatQueue.Messenger.MsSql.Orm;
 
-namespace FatQueue.Messenger.MsSql.Server
+namespace FatQueue.Messenger.Core.Services
 {
-    internal class TaskMonitoringService
+    public class TaskMonitoringService
     {
-        private readonly MsSqlRepository _repository;
+        private readonly IRepository _repository;
         private readonly IMessengerService _messengerService;
 
-        public TaskMonitoringService(string connectionString, ILogger logger, IDictionary<string, Task> tasks)
+        public TaskMonitoringService(ILogger logger, IDictionary<string, Task> tasks, RepositoryFactory factory)
         {
-            _repository = new MsSqlRepository(connectionString);
-            _messengerService = new MsSqlMessengerService(connectionString, logger);
+            _repository = factory.Create();
+            _messengerService = new MessengerService(logger, factory);
 
             Logger = logger;
             Tasks = tasks;

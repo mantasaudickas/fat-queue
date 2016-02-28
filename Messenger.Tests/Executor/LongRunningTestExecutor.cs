@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using FatQueue.Messenger.Core;
+using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.MsSql;
 using FatQueue.Messenger.Tests.Events;
 using FatQueue.Messenger.Tests.Handlers;
@@ -25,12 +26,12 @@ namespace FatQueue.Messenger.Tests.Executor
             }
         }
 
-        public void Execute(MsSqlSettings clientSettings)
+        public void Execute(SqlSettings clientSettings)
         {
             Task.Factory.StartNew(() => ProcessTasks(clientSettings));
         }
 
-        private void ProcessTasks(MsSqlSettings clientSettings)
+        private void ProcessTasks(SqlSettings clientSettings)
         {
             var timer = Stopwatch.StartNew();
 
@@ -71,7 +72,7 @@ namespace FatQueue.Messenger.Tests.Executor
                         Guid identity;
                         if (Identities.TryDequeue(out identity))
                         {
-                            var messengerClient = new MsSqlMessenger(clientSettings);
+                            var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
                             if (messengerClient.Cancel(identity))
                             {
                                 Console.WriteLine("Canceled {0}", identity);
@@ -86,13 +87,13 @@ namespace FatQueue.Messenger.Tests.Executor
             Console.WriteLine("All tasks finished. Time: " + timer.Elapsed);
         }
 
-        private void TaskProcess(int processId, MsSqlSettings clientSettings)
+        private void TaskProcess(int processId, SqlSettings clientSettings)
         {
             int queueCount = Queues.Length;
             for (int i = 0; i < 10000; ++i)
             {
                 int messageId = i;
-                var messengerClient = new MsSqlMessenger(clientSettings);
+                var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
 
                 var request = new FatQueuePrintMessageEvent
                 {

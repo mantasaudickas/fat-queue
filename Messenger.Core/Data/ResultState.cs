@@ -1,6 +1,4 @@
-﻿using FatQueue.Messenger.Core;
-
-namespace FatQueue.Messenger.MsSql.Data
+﻿namespace FatQueue.Messenger.Core.Data
 {
     public class ResultState
     {

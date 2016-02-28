@@ -1,4 +1,4 @@
-﻿namespace FatQueue.Messenger.MsSql
+﻿namespace FatQueue.Messenger.Core.Services
 {
     public enum ProcessNameFormat
     {

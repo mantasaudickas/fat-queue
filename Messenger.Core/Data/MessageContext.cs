@@ -1,10 +1,9 @@
 ﻿using System;
-using FatQueue.Messenger.Core;
 using JetBrains.Annotations;
 
-namespace FatQueue.Messenger.MsSql.Data
+namespace FatQueue.Messenger.Core.Data
 {
-    internal class MessageContext
+    public class MessageContext
     {
         public PublishSettings Settings { get; set; }
         public string QueueName { [UsedImplicitly] get; set; }
