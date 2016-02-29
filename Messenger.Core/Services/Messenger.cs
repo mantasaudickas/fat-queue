@@ -111,17 +111,21 @@ namespace FatQueue.Messenger.Core.Services
             return name;
         }
 
-        private void Persist(string queueName, string contentType, string content, string context, Guid? batchKey, int delayInSeconds, bool insert)
+        private void Persist(string queueName, string contentType, string content, string context, Guid? identity, int delayInSeconds, bool insert)
         {
             var queueId = GetQueueId(queueName, _repository, Logger);
+
+            var taskIdentity = identity.GetValueOrDefault();
+            if (taskIdentity == Guid.Empty)
+                taskIdentity = Guid.NewGuid();
 
             var timer = Stopwatch.StartNew();
             try
             {
                 if (insert)
-                    _repository.InsertMessage(queueId, contentType, content, context, batchKey);
+                    _repository.InsertMessage(queueId, contentType, content, context, taskIdentity);
                 else
-                    _repository.CreateMessage(queueId, contentType, content, context, delayInSeconds, batchKey);
+                    _repository.CreateMessage(queueId, contentType, content, context, delayInSeconds, taskIdentity);
             }
             finally
             {

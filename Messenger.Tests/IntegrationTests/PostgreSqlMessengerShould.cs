@@ -47,7 +47,7 @@ namespace FatQueue.Messenger.Tests.IntegrationTests
             _queueId = _repository.CreateQueue(_queueName);
 
             var message = new SampleAction {Name = Guid.NewGuid().ToString()};
-            _repository.CreateMessage(_queueId, "Test", JsonSerializer.ToJson(message), null, 0, null);
+            _repository.CreateMessage(_queueId, "Test", JsonSerializer.ToJson(message), null, 0, Guid.NewGuid());
             _repository.CreateMessage(_queueId, "Test", JsonSerializer.ToJson(message), null, 0, _identity);
         }
 

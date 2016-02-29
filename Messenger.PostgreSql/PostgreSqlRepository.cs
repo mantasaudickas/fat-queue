@@ -96,7 +96,7 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
-        public void CreateMessage(int queueId, string contentType, string content, string context, int delayInSeconds, Guid? identity)
+        public void CreateMessage(int queueId, string contentType, string content, string context, int delayInSeconds, Guid identity)
         {
             const string sql =
                 "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity) " +
@@ -119,7 +119,7 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
-        public void InsertMessage(int queueId, string contentType, string content, string context, Guid? identity)
+        public void InsertMessage(int queueId, string contentType, string content, string context, Guid identity)
         {
             const string selectSql =
                 "SELECT StartDate " +
@@ -535,8 +535,8 @@ namespace FatQueue.Messenger.PostgreSql
 
         public void ReenqueueFailedMessages(int queueId, params Guid[] identity)
         {
-            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity], [CorrelationId]) " +
-                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity], [CorrelationId] " +
+            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity]) " +
+                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity] " +
                                "from Messenger.FailedMessages " +
                                "where [Identity] in @identity";
 
