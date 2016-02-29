@@ -5,6 +5,7 @@ using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.Core.Tools;
 using FatQueue.Messenger.PostgreSql;
 using NUnit.Framework;
+using StackExchange.Profiling;
 
 namespace FatQueue.Messenger.Tests.IntegrationTests
 {
@@ -16,7 +17,14 @@ namespace FatQueue.Messenger.Tests.IntegrationTests
             ConnectionString = "Server=127.0.0.1;Database=Messenger;User Id=admin;Password=admin;Enlist=true"
         };
 
-        private PostgreSqlRepositoryFactory Factory { get { return new PostgreSqlRepositoryFactory(_sqlSettings); } }
+        private PostgreSqlRepositoryFactory Factory
+        {
+            get
+            {
+                return new PostgreSqlRepositoryFactory(() => new PostgreSqlRepository(_sqlSettings));
+            }
+        }
+
         private IRepository _repository;
         private int _queueId;
         private Guid _identity;
@@ -26,11 +34,15 @@ namespace FatQueue.Messenger.Tests.IntegrationTests
         [SetUp]
         public void Setup()
         {
+            MiniProfiler.Start();
+
             _identity = Guid.NewGuid();
             _queueName = Guid.NewGuid().ToString("N");
             _processName = Guid.NewGuid().ToString("N");
 
             _repository = Factory.Create();
+
+            _repository.ReleaseProcessLock(_processName);
 
             _queueId = _repository.CreateQueue(_queueName);
 
@@ -45,7 +57,7 @@ namespace FatQueue.Messenger.Tests.IntegrationTests
             var queueStatus = _repository.GetQueueStatuses();
             foreach (var queue in queueStatus)
             {
-                var messages = _repository.GetMessages(queue.QueueId, 1, 10, null, null);
+                var messages = _repository.GetMessages(queue.QueueId, 1, 10);
                 foreach (var details in messages)
                 {
                     _repository.RemoveMessage(details.MessageId);

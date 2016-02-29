@@ -5,27 +5,19 @@ namespace FatQueue.Messenger.Core
 {
     public interface IMessengerService
     {
-        IEnumerable<QueueStatus> GetQueueStatuses();
-
         IEnumerable<MessengerStatus> GetMessengerStatus();
-
+        IEnumerable<QueueStatus> GetQueueStatuses();
         IEnumerable<ProcessStatus> GetActiveProcesses();
 
-        IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? from, DateTime? to);
+        IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize);
+        IEnumerable<MessageDetails> GetCompletedMessages(int pageNo, int pageSize);
+        IEnumerable<MessageDetails> GetFailedMessages(int pageNo, int pageSize);
 
-        IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
+        MessageDetails GetMessageDetails(Guid identity);
+        void RemoveMessages(params Guid[] identity);
 
-        IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
-
-        MessageDetails GetMessage(int messageId);
-
-        CompletedMessageDetails GetCompletedMessage(int messageId);
-
-        FailedMessageDetails GetFailedMessage(int messageId);
-
-        void ReenqueueFailedMessages(int[] ids, string queueName = null);
-
-        void RecoverFailedMessages();
+        int ReenqueueFailedMessages();
+        int ReenqueueFailedMessages(string queueName, params Guid[] identity);
 
         void ReleaseProcessLock(string processName);
     }
@@ -60,37 +52,17 @@ namespace FatQueue.Messenger.Core
         public DateTime LastHeartbeat { get; set; }
     }
 
-    public class FailedMessageDetails
-    {
-        public int FailedMessageId { get; set; }
-        public string ContentType { get; set; }
-        public string Content { get; set; }
-        public DateTime CreateDate { get; set; }
-        public string Error { get; set; }
-        public string Context { get; set; }
-        public DateTime FailedDate { get; set; }
-        public Guid? Identity { get; set; }
-    }
-
-    public class CompletedMessageDetails
-    {
-        public int CompletedMessageId { get; set; }
-        public string ContentType { get; set; }
-        public string Content { get; set; }
-        public DateTime CreateDate { get; set; }
-        public DateTime CompletedDate { get; set; }
-        public string Context { get; set; }
-        public Guid? Identity { get; set; }
-    }
-
     public class MessageDetails
     {
         public int MessageId { get; set; }
-        public int QueueId { get; set; }
+        public int? QueueId { get; set; }
         public string ContentType { get; set; }
         public string Content { get; set; }
         public DateTime StartDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
         public string Context { get; set; }
-        public Guid? Identity { get; set; }
+        public Guid Identity { get; set; }
+        public string Error { get; set; }
+        public string State { get; set; }
     }
 }

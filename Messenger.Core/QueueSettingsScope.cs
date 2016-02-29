@@ -4,6 +4,7 @@ using System.Web;
 
 namespace FatQueue.Messenger.Core
 {
+    [Serializable]
     public class QueueSettingsScope : IDisposable
     {
         private QueueSettingsScope _parentSettingsScope;

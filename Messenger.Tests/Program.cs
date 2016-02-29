@@ -11,8 +11,8 @@ namespace FatQueue.Messenger.Tests
 {
     static class Program
     {
-        //const string ConnectionString = "Server=.\\SQLEXPRESS;Database=Messenger;Integrated Security=SSPI";
-        const string ConnectionString = "Server=127.0.0.1;Database=Messenger;User Id=admin;Password=admin;Enlist=true";
+        const string ConnectionString = "Server=.\\SQLEXPRESS;Database=Messenger;Integrated Security=SSPI";
+        //const string ConnectionString = "Server=127.0.0.1;Database=Messenger;User Id=admin;Password=admin;Enlist=true";
 
         private static MessengerServer _server;
 
@@ -68,8 +68,8 @@ namespace FatQueue.Messenger.Tests
                 CompletedMessages = new CompletedMessages { Archive = true, Cleanup = true, CleanOlderThanUtc = () => DateTime.UtcNow.AddMinutes(-5) },
             };
 
-            _server = new MessengerServer(settings, new PostgreSqlRepositoryFactory(settings));
-            //_server = new MessengerServer(settings, new MsSqlRepositoryFactory(settings));
+            //_server = new MessengerServer(settings, new PostgreSqlRepositoryFactory(settings));
+            _server = new MessengerServer(settings, new MsSqlRepositoryFactory(settings));
             _server.Start(cancelationSource.Token);
         }
     }

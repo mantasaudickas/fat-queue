@@ -104,7 +104,7 @@ namespace FatQueue.Messenger.Core.Services
 
         private void TryRecoverFailedMessages(CancellationToken cancellationToken)
         {
-            Task.Factory.StartNew(() => _messengerService.RecoverFailedMessages(), cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            Task.Factory.StartNew(() => _messengerService.ReenqueueFailedMessages(), cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
     }
 }

@@ -17,14 +17,14 @@ namespace FatQueue.Messenger.Core.Services
             _repository = factory.Create();
         }
 
-        public IEnumerable<QueueStatus> GetQueueStatuses()
-        {
-            return _repository.GetQueueStatuses();
-        }
-
         public IEnumerable<MessengerStatus> GetMessengerStatus()
         {
             return _repository.GetMessengerStatus();
+        }
+
+        public IEnumerable<QueueStatus> GetQueueStatuses()
+        {
+            return _repository.GetQueueStatuses();
         }
 
         public IEnumerable<ProcessStatus> GetActiveProcesses()
@@ -32,62 +32,42 @@ namespace FatQueue.Messenger.Core.Services
             return _repository.GetActiveProcesses();
         }
 
-        public IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? @from, DateTime? to)
+        public IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize)
         {
-            return _repository.GetCompletedMessages(pageNo, pageSize, from, to);
+            return _repository.GetMessages(queueId, pageNo, pageSize);
         }
 
-        public IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? from, DateTime? to)
+        public IEnumerable<MessageDetails> GetCompletedMessages(int pageNo, int pageSize)
         {
-            return _repository.GetMessages(queueId, pageNo, pageSize, from, to);
-        } 
-
-        public IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to)
-        {
-            return _repository.GetFailedMessages(pageNo, pageSize, from, to);
+            return _repository.GetCompletedMessages(pageNo, pageSize);
         }
 
-        public MessageDetails GetMessage(int messageId)
+        public IEnumerable<MessageDetails> GetFailedMessages(int pageNo, int pageSize)
         {
-            return _repository.GetMessage(messageId);
+            return _repository.GetFailedMessages(pageNo, pageSize);
         }
 
-        public CompletedMessageDetails GetCompletedMessage(int messageId)
+        public MessageDetails GetMessageDetails(Guid identity)
         {
-            return _repository.GetCompletedMessage(messageId);
+            return _repository.GetMessageDetails(identity);
         }
 
-        public FailedMessageDetails GetFailedMessage(int messageId)
+        public void RemoveMessages(params Guid[] identity)
         {
-            return _repository.GetFailedMessage(messageId);
+            _repository.RemoveMessages(identity);
         }
 
-        public void ReenqueueFailedMessages(int[] ids, string queueName = null)
-        {
-            if (ids == null || ids.Length == 0)
-            {
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                queueName = "FatQueue.Messenger.Failed";
-            }
-
-            int queueId = Messenger.GetQueueId(queueName, _repository, _logger);
-            _repository.ReenqueueFailedMessages(queueId, ids);
-        }
-
-        public void RecoverFailedMessages()
+        public int ReenqueueFailedMessages()
         {
             const int pageSize = ServerSettings.FailedMessageBatchSize;
-            const int fromInMinutes = ServerSettings.FailedMessageRecoveryFromMinutes;    // if tasks are failing for more than 5 days - give up
-            const int toInMinutes = ServerSettings.FailedMessageRecoveryToMinutes;    
+            //const int fromInMinutes = ServerSettings.FailedMessageRecoveryFromMinutes;    // if tasks are failing for more than 5 days - give up
+            //const int toInMinutes = ServerSettings.FailedMessageRecoveryToMinutes;    
 
+            int? queueId = null;
             try
             {
-                var from = DateTime.UtcNow.AddMinutes(-fromInMinutes);
-                var to = DateTime.UtcNow.AddMinutes(-toInMinutes);
+                //var from = DateTime.UtcNow.AddMinutes(-fromInMinutes);
+                //var to = DateTime.UtcNow.AddMinutes(-toInMinutes);
                 bool finished = false;
                 int pageNo = 0;
 
@@ -95,13 +75,13 @@ namespace FatQueue.Messenger.Core.Services
                 {
                     pageNo += 1;
 
-                    var failedMessages = GetFailedMessages(pageNo, pageSize, from, to);
+                    var failedMessages = GetFailedMessages(pageNo, pageSize);
                     if (failedMessages != null)
                     {
-                        var ids = failedMessages.Select(message => message.FailedMessageId).ToArray();
+                        var ids = failedMessages.Select(message => message.Identity).ToArray();
                         if (ids.Length > 0)
                         {
-                            ReenqueueFailedMessages(ids);
+                            queueId = ReenqueueFailedMessages(queueId, null, ids);
                         }
 
                         finished = ids.Length < pageSize;
@@ -116,6 +96,33 @@ namespace FatQueue.Messenger.Core.Services
             {
                 _logger.Error(e.GetFormattedError("Failed to recover failed messages"));
             }
+
+            return queueId.GetValueOrDefault();
+        }
+
+        public int ReenqueueFailedMessages(string queueName, params Guid[] identity)
+        {
+            return ReenqueueFailedMessages(null, queueName, identity);
+        }
+
+        private int ReenqueueFailedMessages(int? queueId, string queueName, Guid[] identity)
+        {
+            if (identity == null || identity.Length == 0)
+            {
+                return 0;
+            }
+
+            if (!queueId.HasValue)
+            {
+                if (string.IsNullOrWhiteSpace(queueName))
+                    queueName = "Messenger.Retry.Failed";
+
+                queueId = Messenger.GetQueueId(queueName, _repository, _logger);
+            }
+
+            _repository.ReenqueueFailedMessages(queueId.Value, identity);
+
+            return queueId.Value;
         }
 
         public void ReleaseProcessLock(string processName)

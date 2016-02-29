@@ -27,8 +27,8 @@ namespace FatQueue.Messenger.Tests.Executor
                 }
                 else
                 {
-                    //var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
-                    var messengerClient = new Core.Services.Messenger(clientSettings, new PostgreSqlRepositoryFactory(clientSettings));
+                    var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
+                    //var messengerClient = new Core.Services.Messenger(clientSettings, new PostgreSqlRepositoryFactory(clientSettings));
 
                     int delayExecution = 0;
                     Guid? identity = null;

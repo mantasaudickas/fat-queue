@@ -19,22 +19,26 @@ namespace FatQueue.Messenger.Core
         IList<MessageInfo> FetchQueueMessages(int queueId, int messageCount);
         int CancelMessages(Guid identity);
         void RemoveMessage(int messageId, bool archiveMessage);
-        void RemoveMessage(int messageId);
+        void RemoveMessage(params int [] messageId);
         void CopyMessageToFailed(int messageId);
         void MoveMessageToEnd(int messageId);
         void Heartbeat(string processName);
         void ClearStaleProcesses(DateTime olderThan);
         void ReleaseProcessLock(params string [] processNames);
-        IEnumerable<QueueStatus> GetQueueStatuses();
-        IEnumerable<MessengerStatus> GetMessengerStatus();
-        IEnumerable<ProcessStatus> GetActiveProcesses();
+
         void PurgeCompletedMessages(DateTime olderThan);
-        void ReenqueueFailedMessages(int queueId, int[] ids);
-        IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize, DateTime? @from, DateTime? to);
-        IEnumerable<CompletedMessageDetails> GetCompletedMessages(int pageNo, int pageSize, DateTime? @from, DateTime? to);
-        IEnumerable<FailedMessageDetails> GetFailedMessages(int pageNo, int pageSize, DateTime? from, DateTime? to);
-        MessageDetails GetMessage(int messageId);
-        CompletedMessageDetails GetCompletedMessage(int messageId);
-        FailedMessageDetails GetFailedMessage(int messageId);
+
+        // management
+        IEnumerable<MessengerStatus> GetMessengerStatus();
+        IEnumerable<QueueStatus> GetQueueStatuses();
+        IEnumerable<ProcessStatus> GetActiveProcesses();
+
+        IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize);
+        IEnumerable<MessageDetails> GetCompletedMessages(int pageNo, int pageSize);
+        IEnumerable<MessageDetails> GetFailedMessages(int pageNo, int pageSize);
+
+        MessageDetails GetMessageDetails(Guid identity);
+        void RemoveMessages(params Guid[] identity);
+        void ReenqueueFailedMessages(int queueId, params Guid[] identity);
     }
 }
