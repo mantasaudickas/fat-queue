@@ -122,7 +122,7 @@ namespace FatQueue.Messenger.Core.Services
                                 }
                             }
 
-                            Repository.RemoveMessage(messageId, archiveMessages && !settings.DiscardWhenComplete);
+                            Repository.RemoveMessage(messageId, archiveMessages && !settings.DiscardWhenComplete, transaction);
 
                             transaction.Complete();
                         }
@@ -185,18 +185,18 @@ namespace FatQueue.Messenger.Core.Services
                 switch (recoveryMode)
                 {
                     case RecoveryMode.MakeLast:
-                        Repository.MoveMessageToEnd(messageId);
+                        Repository.MoveMessageToEnd(messageId, transaction);
                         break;
                     case RecoveryMode.MarkAsFailed:
-                        Repository.CopyMessageToFailed(messageId);
-                        Repository.RemoveMessage(messageId);
+                        Repository.CopyMessageToFailed(messageId, transaction);
+                        Repository.RemoveMessage(new [] {messageId}, transaction);
                         break;
                     default:
                         // should not happen
                         throw new NotImplementedException();
                 }
 
-                Repository.ReleaseQueue(queueId);
+                Repository.ReleaseQueue(queueId, transaction);
                 transaction.Complete();
             }
         }

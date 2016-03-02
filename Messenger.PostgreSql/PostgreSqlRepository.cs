@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlTypes;
 using System.Linq;
 using System.Transactions;
 using Dapper;
@@ -11,7 +10,6 @@ using FatQueue.Messenger.Core.Database;
 using FatQueue.Messenger.Core.Orm;
 using Npgsql;
 using IsolationLevel = System.Transactions.IsolationLevel;
-using Transaction = FatQueue.Messenger.Core.Orm.Transaction;
 
 namespace FatQueue.Messenger.PostgreSql
 {
@@ -33,7 +31,7 @@ namespace FatQueue.Messenger.PostgreSql
         public ITransaction CreateProcessingTransaction(TransactionIsolationLevel jobTransactionIsolationLevel, TimeSpan jobTimeout)
         {
             var isolationLevel = (IsolationLevel)jobTransactionIsolationLevel;
-            return new Transaction(isolationLevel, jobTimeout, TransactionScopeOption.RequiresNew);
+            return new FatQueueTransaction(isolationLevel, jobTimeout, _connectionFactory, TransactionScopeOption.RequiresNew);
         }
 
         public int? FetchQueueId(string queueName)
@@ -42,13 +40,9 @@ namespace FatQueue.Messenger.PostgreSql
 
             int? queueId;
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted))
-                {
-                    queueId = db.Connection.ExecuteScalar<int?>(sql, new {queueName}, transaction: transaction);
-                    transaction.Commit();
-                }
+                queueId = db.Connection.ExecuteScalar<int?>(sql, new {queueName});
                 db.Complete();
             }
 
@@ -58,23 +52,21 @@ namespace FatQueue.Messenger.PostgreSql
         public int CreateQueue(string queueName)
         {
             const string fetchSql = "SELECT QueueId FROM Messenger.Queues WHERE Name = :queueName";
-            const string lockSql = "LOCK TABLE Messenger.Queues";
             const string insertSql = "INSERT INTO Messenger.Queues (Name) VALUES(:queueName); SELECT LASTVAL();";
+            const string lockSql = "LOCK TABLE Messenger.Queues";
 
             int? queueId;
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+                queueId = db.Connection.ExecuteScalar<int?>(fetchSql, new {queueName});
+                if (!queueId.HasValue)
                 {
-                    queueId = db.Connection.ExecuteScalar<int?>(fetchSql, new {queueName}, transaction: transaction);
+                    db.Connection.Execute(lockSql);
+                    queueId = db.Connection.ExecuteScalar<int?>(fetchSql, new {queueName});
                     if (!queueId.HasValue)
                     {
-                        db.Connection.Execute(lockSql, transaction: transaction);
-                        queueId = db.Connection.ExecuteScalar<int?>(fetchSql, new {queueName}, transaction: transaction);
-                        if (!queueId.HasValue)
-                            queueId = db.Connection.ExecuteScalar<int>(insertSql, new {queueName}, transaction: transaction);
+                        queueId = db.Connection.ExecuteScalar<int>(insertSql, new {queueName});
                     }
-                    transaction.Commit();
                 }
                 db.Complete();
             }
@@ -85,13 +77,9 @@ namespace FatQueue.Messenger.PostgreSql
         {
             const string sql = "DELETE FROM Messenger.Queues WHERE QueueId = :queueId";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sql, new {queueId}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sql, new {queueId});
                 db.Complete();
             }
         }
@@ -112,7 +100,7 @@ namespace FatQueue.Messenger.PostgreSql
                 Identity = identity,
             };
 
-            using (var db = new Database(_connectionFactory))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 db.Connection.Execute(string.Format(sql, delayInSeconds), message);
                 db.Complete();
@@ -131,7 +119,7 @@ namespace FatQueue.Messenger.PostgreSql
                 "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity) " +
                 "VALUES(:QueueId, :ContentType, :Content, :StartDate, :Context, :Identity)";
 
-            using (var db = new Database(_connectionFactory))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 var createDate = db.Connection.ExecuteScalar<DateTime?>(selectSql, new { queueId });
 
@@ -139,7 +127,7 @@ namespace FatQueue.Messenger.PostgreSql
                 parameters.Add("QueueId", queueId);
                 parameters.Add("ContentType", contentType);
                 parameters.Add("Content", content);
-                parameters.Add("StartDate", createDate.GetValueOrDefault(DateTime.UtcNow), DbType.DateTime2);
+                parameters.Add("StartDate", createDate.GetValueOrDefault(DateTime.UtcNow));
                 parameters.Add("Context", context);
                 parameters.Add("Identity", identity);
 
@@ -168,20 +156,18 @@ namespace FatQueue.Messenger.PostgreSql
                 "returning QueueId, Name, Retries";
 
             QueueInfo queueInfo;
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    queueInfo = db.Connection.Query<QueueInfo>(updateSql, new {processName}, transaction: transaction).FirstOrDefault();
-                    transaction.Commit();
-                }
+                queueInfo = db.Connection
+                    .Query<QueueInfo>(updateSql, new {processName})
+                    .FirstOrDefault();
                 db.Complete();
             }
 
             return queueInfo;
         }
 
-        public void ReleaseQueue(int queueId)
+        public void ReleaseQueue(int queueId, ITransaction transaction = null)
         {
             const string sql =
                 "update Messenger.Queues " +
@@ -192,13 +178,9 @@ namespace FatQueue.Messenger.PostgreSql
                 ", NextTryTime = null " +
                 "where QueueId = :queueId";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sql, new {queueId}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sql, new {queueId});
                 db.Complete();
             }
         }
@@ -213,13 +195,9 @@ namespace FatQueue.Messenger.PostgreSql
                                ", NextTryTime = :nextTryTime " +
                                "where QueueId = :queueId";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sql, new {queueId, retries, formattedError, nextTryTime}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sql, new {queueId, retries, formattedError, nextTryTime});
                 db.Complete();
             }
         }
@@ -229,10 +207,10 @@ namespace FatQueue.Messenger.PostgreSql
             const string sql = "select MessageId, Content, Context, StartDate, Identity " +
                                "from Messenger.Messages " +
                                "where QueueId = :queueId and StartDate <= CURRENT_TIMESTAMP " +
-                               "order by StartDate asc, MessageId asc " +
+                               "order by StartDate asc " +
                                "limit (:messageCount)";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.Unspecified))
             {
                 var messages = db.Connection.Query<MessageInfo>(sql, new { queueId, messageCount }).ToList();
                 db.Complete();
@@ -245,19 +223,15 @@ namespace FatQueue.Messenger.PostgreSql
             const string sql = "delete from Messenger.Messages where Identity = :identity and StartDate > CURRENT_TIMESTAMP";
 
             int affectedRows;
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    affectedRows = db.Connection.Execute(sql, new {identity}, transaction: transaction);
-                    transaction.Commit();
-                }
+                affectedRows = db.Connection.Execute(sql, new {identity});
                 db.Complete();
             }
             return affectedRows;
         }
 
-        public void RemoveMessage(int messageId, bool archiveMessage)
+        public void RemoveMessage(int messageId, bool archiveMessage, ITransaction transaction = null)
         {
             const string sql = "delete from Messenger.Messages where MessageId = :messageId";
 
@@ -267,7 +241,7 @@ namespace FatQueue.Messenger.PostgreSql
                 "from Messenger.Messages " +
                 "where MessageId = :messageId";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Required))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 if (archiveMessage)
                 {
@@ -279,20 +253,23 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
-        public void RemoveMessage(params int [] messageId)
+        public void RemoveMessage(int [] messageId, ITransaction transaction = null)
         {
+            if (messageId == null || messageId.Length == 0)
+                return;
+
             const string sql =
                 "delete from Messenger.Messages " +
                 "where MessageId = ANY(:messageId)";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Required))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 db.Connection.Execute(sql, new { messageId });
                 db.Complete();
             }
         }
 
-        public void CopyMessageToFailed(int messageId)
+        public void CopyMessageToFailed(int messageId, ITransaction transaction = null)
         {
             const string sql =
                 "insert into Messenger.FailedMessages (ContentType, Content, CreateDate, Error, FailedDate, Context, Identity) " +
@@ -301,20 +278,20 @@ namespace FatQueue.Messenger.PostgreSql
                 "join Messenger.Queues q on q.QueueId = m.QueueId " +
                 "where m.MessageId = :messageId ";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Required))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 db.Connection.Execute(sql, new { messageId });
                 db.Complete();
             }
         }
 
-        public void MoveMessageToEnd(int messageId)
+        public void MoveMessageToEnd(int messageId, ITransaction transaction = null)
         {
             const string sql = "update Messenger.Messages " +
                                "set StartDate = CURRENT_TIMESTAMP " +
                                "where MessageId = :messageId";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Required))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
                 db.Connection.Execute(sql, new { messageId });
                 db.Complete();
@@ -328,13 +305,9 @@ namespace FatQueue.Messenger.PostgreSql
                 "values (:processName, CURRENT_TIMESTAMP) " +
                 "on conflict (ProcessName) do update set Lastbeat = CURRENT_TIMESTAMP";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sql, new {processName}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sql, new {processName});
                 db.Complete();
             }
         }
@@ -345,17 +318,13 @@ namespace FatQueue.Messenger.PostgreSql
             const string sqlUpdate = "update Messenger.Queues set ProcessName = null, ProcessingStarted = null, NextTryTime = null where ProcessName = ANY(:processNames)";
             const string sqlDelete = "delete from Messenger.Heartbeat where ProcessName = ANY(:processNames)";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+                var processNames = db.Connection.Query<string>(sql, new {olderThan}).ToArray();
+                if (processNames.Length > 0)
                 {
-                    var processNames = db.Connection.Query<string>(sql, new {olderThan}, transaction: transaction).ToArray();
-                    if (processNames.Length > 0)
-                    {
-                        db.Connection.Execute(sqlUpdate, new {processNames}, transaction: transaction);
-                        db.Connection.Execute(sqlDelete, new {processNames}, transaction: transaction);
-                    }
-                    transaction.Commit();
+                    db.Connection.Execute(sqlUpdate, new {processNames});
+                    db.Connection.Execute(sqlDelete, new {processNames});
                 }
                 db.Complete();
             }
@@ -368,13 +337,9 @@ namespace FatQueue.Messenger.PostgreSql
 
             const string sqlUpdate = "update Messenger.Queues set ProcessName = null, ProcessingStarted = null, NextTryTime = null where ProcessName = ANY(:processNames)";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sqlUpdate, new {processNames}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sqlUpdate, new {processNames});
                 db.Complete();
             }
         }
@@ -383,13 +348,9 @@ namespace FatQueue.Messenger.PostgreSql
         {
             const string sql = "delete from Messenger.CompletedMessages where CompletedDate < :olderThan";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-                {
-                    db.Connection.Execute(sql, new {olderThan}, transaction: transaction);
-                    transaction.Commit();
-                }
+                db.Connection.Execute(sql, new {olderThan});
                 db.Complete();
             }
         }
@@ -404,7 +365,7 @@ namespace FatQueue.Messenger.PostgreSql
                                "union " +
                                "select 'Ready', count(*) from Messenger.Messages";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var status = db.Connection.Query<MessengerStatus>(sql);
                 db.Complete();
@@ -421,7 +382,7 @@ namespace FatQueue.Messenger.PostgreSql
                 "left join Messenger.Messages m on m.QueueId = q.QueueId " +
                 "group by q.QueueId, q.Name, q.ProcessedAt, q.ProcessingStarted, q.ProcessName, q.Retries, q.NextTryTime, q.Error";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var statuses = db.Connection.Query<QueueStatus>(sql);
                 db.Complete();
@@ -433,7 +394,7 @@ namespace FatQueue.Messenger.PostgreSql
         {
             const string sql = "select ProcessName, LastBeat as LastHeartbeat from Messenger.Heartbeat";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var statuses = db.Connection.Query<ProcessStatus>(sql);
                 db.Complete();
@@ -453,13 +414,9 @@ namespace FatQueue.Messenger.PostgreSql
             int offset = (pageNo - 1) * pageSize;
 
             IEnumerable<MessageDetails> statuses;
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.Suppress))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
-                using (var transaction = db.Connection.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted))
-                {
-                    statuses = db.Connection.Query<MessageDetails>(sql, new { queueId, offset, pageSize }, transaction: transaction);
-                    transaction.Commit();
-                }
+                statuses = db.Connection.Query<MessageDetails>(sql, new {queueId, offset, pageSize});
                 db.Complete();
             }
             return statuses;
@@ -476,7 +433,7 @@ namespace FatQueue.Messenger.PostgreSql
 
             int offset = (pageNo - 1) * pageSize;
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var statuses = db.Connection.Query<MessageDetails>(sql, new { offset, pageSize });
                 db.Complete();
@@ -488,14 +445,13 @@ namespace FatQueue.Messenger.PostgreSql
         {
             const string sql = "select *  " +
                                "from Messenger.FailedMessages " +
-                               "--where CreateDate between :timeFrom and :timeTo " +
                                "order by CreateDate asc " +
                                "limit :pageSize " +
                                "offset :offset";
 
             int offset = (pageNo - 1) * pageSize;
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var statuses = db.Connection.Query<MessageDetails>(sql, new { offset, pageSize });
                 db.Complete();
@@ -509,7 +465,7 @@ namespace FatQueue.Messenger.PostgreSql
                                "from Messenger.Messages " +
                                "where Identity = :identity ";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
             {
                 var statuses = db.Connection.Query<MessageDetails>(sql, new { identity });
                 db.Complete();
@@ -525,7 +481,7 @@ namespace FatQueue.Messenger.PostgreSql
             const string readySql = "delete from Messenger.Messages where Identity = ANY(:identity)";
             const string failedSql = "delete from Messenger.FailedMessages where Identity = ANY(:identity)";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.ReadUncommitted))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
                 db.Connection.Execute(readySql, new { identity });
                 db.Connection.Execute(failedSql, new { identity });
@@ -542,7 +498,7 @@ namespace FatQueue.Messenger.PostgreSql
 
             const string sqlDelete = "delete from Messenger.FailedMessages where [Identity] in @identity";
 
-            using (var db = new Database(_connectionFactory, TransactionScopeOption.RequiresNew))
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew))
             {
                 db.Connection.Execute(sql, new { queueId, identity });
                 db.Connection.Execute(sqlDelete, new { queueId, identity });

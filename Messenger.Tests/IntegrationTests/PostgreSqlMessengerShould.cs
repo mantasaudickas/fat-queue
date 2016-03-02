@@ -60,7 +60,7 @@ namespace FatQueue.Messenger.Tests.IntegrationTests
                 var messages = _repository.GetMessages(queue.QueueId, 1, 10);
                 foreach (var details in messages)
                 {
-                    _repository.RemoveMessage(details.MessageId);
+                    _repository.RemoveMessage(new [] {details.MessageId});
                 }
 
                 _repository.DeleteQueue(queue.QueueId);

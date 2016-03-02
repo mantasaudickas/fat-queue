@@ -53,6 +53,9 @@
     <Compile Include="..\AssemblyInfoVersion.cs">
       <Link>Properties\AssemblyInfoVersion.cs</Link>
     </Compile>
+    <Compile Include="IsolationLevelExtensions.cs" />
+    <Compile Include="PostgreSqlDatabase.cs" />
+    <Compile Include="PostgreSqlDbTransaction.cs" />
     <Compile Include="PostgreSqlMessenger.cs" />
     <Compile Include="PostgreSqlMessengerServer.cs" />
     <Compile Include="PostgreSqlMessengerService.cs" />

@@ -7,21 +7,23 @@ namespace FatQueue.Messenger.Core
 {
     public interface IRepository
     {
-        ITransaction CreateProcessingTransaction(TransactionIsolationLevel jobTransactionIsolationLevel, TimeSpan jobTimeout);
         int? FetchQueueId(string queueName);
         int CreateQueue(string queueName);
         void DeleteQueue(int queueId);
         void CreateMessage(int queueId, string contentType, string content, string context, int delayInSeconds, Guid identity);
         void InsertMessage(int queueId, string contentType, string content, string context, Guid identity);
         QueueInfo LockQueue(string processName);
-        void ReleaseQueue(int queueId);
         void SetQueueFailure(int queueId, int retries, string formattedError, DateTime nextTryTime);
         IList<MessageInfo> FetchQueueMessages(int queueId, int messageCount);
         int CancelMessages(Guid identity);
-        void RemoveMessage(int messageId, bool archiveMessage);
-        void RemoveMessage(params int [] messageId);
-        void CopyMessageToFailed(int messageId);
-        void MoveMessageToEnd(int messageId);
+        void RemoveMessage(int messageId, bool archiveMessage, ITransaction transaction = null);
+
+        ITransaction CreateProcessingTransaction(TransactionIsolationLevel jobTransactionIsolationLevel, TimeSpan jobTimeout);
+        void ReleaseQueue(int queueId, ITransaction transaction = null);
+        void RemoveMessage(int [] messageId, ITransaction transaction = null);
+        void CopyMessageToFailed(int messageId, ITransaction transaction = null);
+        void MoveMessageToEnd(int messageId, ITransaction transaction = null);
+
         void Heartbeat(string processName);
         void ClearStaleProcesses(DateTime olderThan);
         void ReleaseProcessLock(params string [] processNames);

@@ -88,9 +88,9 @@
     <Compile Include="IMessengerClient.cs" />
     <Compile Include="IMessengerService.cs" />
     <Compile Include="IRepository.cs" />
-    <Compile Include="Orm\Database.cs" />
+    <Compile Include="Orm\FatQueueDatabase.cs" />
     <Compile Include="Orm\ITransaction.cs" />
-    <Compile Include="Orm\Transaction.cs" />
+    <Compile Include="Orm\FatQueueTransaction.cs" />
     <Compile Include="PublishSettings.cs" />
     <Compile Include="QueueName.cs" />
     <Compile Include="RecoveryMode.cs" />
