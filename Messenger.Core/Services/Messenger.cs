@@ -23,12 +23,17 @@ namespace FatQueue.Messenger.Core.Services
             _repository = factory.Create();
         }
 
-        public void Publish<T>(Expression<Action<T>> methodCall, string queueName = null, PublishSettings publishSettings = null)
+        public void Publish<T>(Expression<Action<T>> methodCall, QueueName queueName = null, PublishSettings publishSettings = null)
         {
-            Publish(methodCall, new QueueName { Name = queueName }, publishSettings);
+            Publish<T, FatQueueContextFactory, FatQueueContext>(methodCall, null, queueName, publishSettings);
         }
 
-        public void Publish<T>(Expression<Action<T>> methodCall, QueueName queueName, PublishSettings publishSettings = null)
+        public void Publish<T, TContextFactory, TContext>(
+            Expression<Action<T>> action, 
+            Expression<Func<TContextFactory, TContext>> contextFactory, 
+            QueueName queueName = null,
+            PublishSettings publishSettings = null) 
+            where TContext : ExecutionContext
         {
             var timer = Stopwatch.StartNew();
             bool success = true;
@@ -50,13 +55,16 @@ namespace FatQueue.Messenger.Core.Services
                 };
 
                 var expressionSerializer = new ExpressionSerializer(Serializer);
-                var content = expressionSerializer.Serialize(methodCall);
+                var content = expressionSerializer.Serialize(action);
+                var contextCreator = contextFactory != null ? expressionSerializer.SerializeFactory(contextFactory) : null;
                 var contentType = requestType.GetContentType();
                 var context = Serializer.Serialize(messageContext);
 
                 Persist(
                     messageContext.QueueName,
-                    contentType, content, context,
+                    contentType, content,
+                    contextCreator,
+                    context,
                     publishSettings.Identity,
                     publishSettings.DelayExecutionInSeconds,
                     publishSettings.HighestPriority);
@@ -111,7 +119,7 @@ namespace FatQueue.Messenger.Core.Services
             return name;
         }
 
-        private void Persist(string queueName, string contentType, string content, string context, Guid? identity, int delayInSeconds, bool insert)
+        private void Persist(string queueName, string contentType, string content, string contextFactory, string context, Guid? identity, int delayInSeconds, bool insert)
         {
             var queueId = GetQueueId(queueName, _repository, Logger);
 
@@ -123,9 +131,9 @@ namespace FatQueue.Messenger.Core.Services
             try
             {
                 if (insert)
-                    _repository.InsertMessage(queueId, contentType, content, context, taskIdentity);
+                    _repository.InsertMessage(queueId, contentType, content, contextFactory, context, taskIdentity);
                 else
-                    _repository.CreateMessage(queueId, contentType, content, context, delayInSeconds, taskIdentity);
+                    _repository.CreateMessage(queueId, contentType, content, contextFactory, context, delayInSeconds, taskIdentity);
             }
             finally
             {

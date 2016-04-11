@@ -24,10 +24,27 @@ namespace FatQueue.Messenger.Core.Expressions
             var callExpression = methodCall.Body as MethodCallExpression;
             if (callExpression == null)
             {
-                throw new NotSupportedException("Expression body should be `MethodCallExpression`");
+                throw new NotSupportedException(string.Format("Expression body should be `MethodCallExpression`. Received: {0}", methodCall.GetType()));
             }
 
             var messageAction = new MessageAction(_serializer, typeof(T), callExpression.Method, GetExpressionArguments(callExpression));
+            var messageActionContainer = MessageActionContainer.Serialize(messageAction);
+            var result = _serializer.Serialize(messageActionContainer);
+
+            return result;
+        }
+
+        public string SerializeFactory<T, TResult>(Expression<Func<T, TResult>> methodCall)
+        {
+            if (methodCall == null) throw new ArgumentNullException("methodCall");
+
+            var callExpression = methodCall.Body as MethodCallExpression;
+            if (callExpression == null)
+            {
+                throw new NotSupportedException("Expression body should be `NewExpression`");
+            }
+
+            var messageAction = new FunctionAction(_serializer, typeof(T), callExpression.Method, GetExpressionArguments(callExpression));
             var messageActionContainer = MessageActionContainer.Serialize(messageAction);
             var result = _serializer.Serialize(messageActionContainer);
 

@@ -11,8 +11,7 @@ namespace FatQueue.Messenger.Tests.Executor
         {
             var clientSettings = new SqlSettings { ConnectionString = connectionString };
             var messengerClient = new Core.Services.Messenger(clientSettings, new MsSqlRepositoryFactory(clientSettings));
-            messengerClient.Publish<FatQueueSignalREventHandler>(
-                handler => handler.Handle(new FatQueueSignalREvent()));
+            messengerClient.Publish<FatQueueSignalREventHandler>(handler => handler.Handle(new FatQueueSignalREvent()));
         }
     }
 }

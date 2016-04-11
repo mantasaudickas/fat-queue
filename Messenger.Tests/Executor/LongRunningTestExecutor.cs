@@ -108,7 +108,7 @@ namespace FatQueue.Messenger.Tests.Executor
                 };
                 Identities.Enqueue(identity);
 
-                messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), Queues[processId % queueCount], publishSettings);
+                messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), new QueueName(Queues[processId % queueCount]), publishSettings);
             }
         }
     }

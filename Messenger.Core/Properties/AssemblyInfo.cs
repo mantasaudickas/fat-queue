@@ -22,3 +22,4 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("01e4d669-76ef-4d1c-b9d2-fb64e8bec2a9")]
 
+[assembly: InternalsVisibleTo("FatQueue.Messenger.Tests")]

@@ -7,7 +7,7 @@ namespace FatQueue.Messenger.Core
         public RecoveryMode RecoveryMode { get; set; }
         public TransactionIsolationLevel JobIsolationLevel { get; set; }
         public TimeSpan JobTimeout { get; set; }
-        public int MaxRetriesBeforeFail { get; set; }
+        public int? MaxRetriesBeforeFail { get; set; }
         public int DelayExecutionInSeconds { get; set; }
         public bool DiscardWhenComplete { get; set; }
         public bool HighestPriority { get; set; }

@@ -58,6 +58,7 @@ namespace FatQueue.Messenger.Core
         public int? QueueId { get; set; }
         public string ContentType { get; set; }
         public string Content { get; set; }
+        public string ContextFactory { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? CompletedDate { get; set; }
         public string Context { get; set; }

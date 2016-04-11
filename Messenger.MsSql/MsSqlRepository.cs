@@ -71,13 +71,13 @@ namespace FatQueue.Messenger.MsSql
             }
         }
 
-        public void CreateMessage(int queueId, string contentType, string content, string context, int delayInSeconds, Guid identity)
+        public void CreateMessage(int queueId, string contentType, string content, string contextFactory, string context, int delayInSeconds, Guid identity)
         {
             const string sql =
-                "INSERT INTO [Messenger].[Messages] ([QueueId], [ContentType], [Content], [StartDate], [Context], [Identity]) " +
-                "VALUES(@QueueId, @ContentType, @Content, DATEADD(second, @DelayInSeconds, SYSUTCDATETIME()), @Context, @Identity)";
+                "INSERT INTO [Messenger].[Messages] ([QueueId], [ContentType], [Content], [StartDate], [Context], [Identity], [ContextFactory]) " +
+                "VALUES(@QueueId, @ContentType, @Content, DATEADD(second, @DelayInSeconds, SYSUTCDATETIME()), @Context, @Identity, @ContextFactory)";
 
-            var message = new 
+            var message = new
             {
                 QueueId = queueId,
                 ContentType = contentType,
@@ -85,6 +85,7 @@ namespace FatQueue.Messenger.MsSql
                 DelayInSeconds = delayInSeconds,
                 Context = context,
                 Identity = identity,
+                ContextFactory = contextFactory
             };
 
             using (var db = new FatQueueDatabase(_connectionFactory))
@@ -94,7 +95,7 @@ namespace FatQueue.Messenger.MsSql
             }
         }
 
-        public void InsertMessage(int queueId, string contentType, string content, string context, Guid identity)
+        public void InsertMessage(int queueId, string contentType, string content, string contextFactory, string context, Guid identity)
         {
             const string selectSql =
                 "SELECT [StartDate] " +
@@ -103,8 +104,8 @@ namespace FatQueue.Messenger.MsSql
                 "ORDER BY [StartDate] ASC";
 
             const string sql =
-                "INSERT INTO [Messenger].[Messages] ([QueueId], [ContentType], [Content], [StartDate], [Context], [Identity]) " +
-                "VALUES(@QueueId, @ContentType, @Content, @StartDate, @Context, @Identity)";
+                "INSERT INTO [Messenger].[Messages] ([QueueId], [ContentType], [Content], [StartDate], [Context], [Identity], [ContextFactory]) " +
+                "VALUES(@QueueId, @ContentType, @Content, @StartDate, @Context, @Identity, @ContextFactory)";
 
             using (var db = new FatQueueDatabase(_connectionFactory))
             {
@@ -117,6 +118,7 @@ namespace FatQueue.Messenger.MsSql
                 parameters.Add("StartDate", createDate.GetValueOrDefault(DateTime.UtcNow), DbType.DateTime2);
                 parameters.Add("Context", context);
                 parameters.Add("Identity", identity);
+                parameters.Add("ContextFactory", contextFactory);
 
                 db.Connection.Execute(sql, parameters);
                 db.Complete();
@@ -204,7 +206,7 @@ namespace FatQueue.Messenger.MsSql
 
         public IList<MessageInfo> FetchQueueMessages(int queueId, int messageCount)
         {
-            const string sql = "select top(@messageCount) MessageId, Content, Context, StartDate, [Identity] " +
+            const string sql = "select top(@messageCount) MessageId, Content, Context, StartDate, [Identity], ContextFactory " +
                                "from Messenger.Messages " +
                                "where QueueId = @queueId and StartDate <= SYSUTCDATETIME() " +
                                "order by StartDate asc, MessageId asc";
@@ -219,11 +221,14 @@ namespace FatQueue.Messenger.MsSql
 
         public int CancelMessages(Guid identity)
         {
-            const string sql = "delete from [Messenger].[Messages] where [Identity] = @identity and StartDate > SYSUTCDATETIME()";
+            const string sql1 = "delete from [Messenger].[Messages] where [Identity] = @identity and StartDate > SYSUTCDATETIME()";
+            const string sql2 = "delete from [Messenger].[FailedMessages] where [Identity] = @identity";
 
             using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.RequiresNew, IsolationLevel.Serializable))
             {
-                var affectedRows = db.Connection.Execute(sql, new { identity });
+                var affectedRows = db.Connection.Execute(sql1, new { identity });
+                if (affectedRows == 0)
+                    affectedRows = db.Connection.Execute(sql2, new {identity});
                 db.Complete();
                 return affectedRows;
             }
@@ -234,8 +239,8 @@ namespace FatQueue.Messenger.MsSql
             const string sql = "delete from [Messenger].[Messages] where MessageId = @messageId";
 
             const string sqlArchive =
-                "insert into [Messenger].[CompletedMessages] (ContentType, Content, CreateDate, Context, CompletedDate, [Identity]) " +
-                "select ContentType, Content, StartDate, Context, SYSUTCDATETIME(), [Identity] " +
+                "insert into [Messenger].[CompletedMessages] (ContentType, Content, CreateDate, Context, CompletedDate, [Identity], ContextFactory) " +
+                "select ContentType, Content, StartDate, Context, SYSUTCDATETIME(), [Identity], ContextFactory " +
                 "from [Messenger].[Messages] " +
                 "where MessageId = @messageId";
 
@@ -270,8 +275,8 @@ namespace FatQueue.Messenger.MsSql
         public void CopyMessageToFailed(int messageId, ITransaction transaction = null)
         {
             const string sql =
-                "insert into Messenger.FailedMessages (ContentType, Content, CreateDate, Error, FailedDate, Context, [Identity]) " +
-                "select m.ContentType, m.Content, m.StartDate, q.Error, SYSUTCDATETIME(), m.Context, m.[Identity] " +
+                "insert into Messenger.FailedMessages (ContentType, Content, CreateDate, Error, FailedDate, Context, [Identity], ContextFactory) " +
+                "select m.ContentType, m.Content, m.StartDate, q.Error, SYSUTCDATETIME(), m.Context, m.[Identity], m.ContextFactory " +
                 "from Messenger.Messages m " +
                 "join Messenger.Queues q on q.QueueId = m.QueueId " +
                 "where m.MessageId = @messageId ";
@@ -408,7 +413,7 @@ namespace FatQueue.Messenger.MsSql
 
         public IEnumerable<MessageDetails> GetMessages(int queueId, int pageNo, int pageSize)
         {
-            const string sql = "select MessageId, QueueId, ContentType, Content, StartDate, Context, [Identity], 'Ready' as State " +
+            const string sql = "select MessageId, QueueId, ContentType, Content, StartDate, Context, [Identity], 'Ready' as State, ContextFactory " +
                                "from Messenger.Messages " +
                                "where QueueId = @queueId " +
                                "order by StartDate asc " +
@@ -427,7 +432,7 @@ namespace FatQueue.Messenger.MsSql
 
         public IEnumerable<MessageDetails> GetCompletedMessages(int pageNo, int pageSize)
         {
-            const string sql = "select CompletedMessageId as MessageId, ContentType, Content, CreateDate as StartDate, Context, [Identity], CompletedDate, 'Completed' as State " +
+            const string sql = "select CompletedMessageId as MessageId, ContentType, Content, CreateDate as StartDate, Context, [Identity], CompletedDate, 'Completed' as State, ContextFactory " +
                                "from Messenger.CompletedMessages " +
                                "order by CreateDate asc " +
                                "offset @offset rows " +
@@ -445,7 +450,7 @@ namespace FatQueue.Messenger.MsSql
 
         public IEnumerable<MessageDetails> GetFailedMessages(int pageNo, int pageSize)
         {
-            const string sql = "select FailedMessageId as MessageId, ContentType, Content, CreateDate as StartDate, Context, [Identity], Error, FailedDate as CompletedDate, 'Failed' as State " +
+            const string sql = "select FailedMessageId as MessageId, ContentType, Content, CreateDate as StartDate, Context, [Identity], Error, FailedDate as CompletedDate, 'Failed' as State, ContextFactory " +
                                "from Messenger.FailedMessages " +
                                "order by CreateDate asc " +
                                "offset @offset rows " +
@@ -464,11 +469,11 @@ namespace FatQueue.Messenger.MsSql
         {
             const string sql =
                 "select * from( " +
-                "   select MessageId, QueueId, ContentType, Content, StartDate, Context, [Identity], null as Error, null as CompletedDate, 'Ready' as State from Messenger.Messages " +
+                "   select MessageId, QueueId, ContentType, Content, StartDate, Context, [Identity], null as Error, null as CompletedDate, 'Ready' as State, ContextFactory from Messenger.Messages " +
                 "   union " +
-                "   select CompletedMessageId, null, ContentType, Content, CreateDate, Context, [Identity], null as Error, CompletedDate, 'Completed' from Messenger.CompletedMessages " +
+                "   select CompletedMessageId, null, ContentType, Content, CreateDate, Context, [Identity], null as Error, CompletedDate, 'Completed', ContextFactory from Messenger.CompletedMessages " +
                 "   union " +
-                "   select FailedMessageId, null, ContentType, Content, CreateDate, Context, [Identity], Error, FailedDate, 'Failed' from Messenger.FailedMessages " +
+                "   select FailedMessageId, null, ContentType, Content, CreateDate, Context, [Identity], Error, FailedDate, 'Failed', ContextFactory from Messenger.FailedMessages " +
                 ") as msg " +
                 "where [Identity] = @identity";
 
@@ -498,8 +503,8 @@ namespace FatQueue.Messenger.MsSql
 
         public void ReenqueueFailedMessages(int queueId, params Guid[] identity)
         {
-            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity]) " +
-                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity] " +
+            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity], ContextFactory) " +
+                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity], ContextFactory " +
                                "from Messenger.FailedMessages " +
                                "where [Identity] in @identity";
 

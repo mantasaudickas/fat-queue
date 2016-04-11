@@ -72,7 +72,7 @@ namespace FatQueue.Messenger.Tests.Executor
                         Message = new CustomMessage { Message = "Published from main manually. Delay: " + delayExecution }
                     };
 
-                    messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), queueName, publishSettings);
+                    messengerClient.Publish<FatQueuePrintMessageEventHandler>(handler => handler.Handle(request), new QueueName(queueName), publishSettings);
 
                     Console.WriteLine("Message published to queue {0}", queueName);
                 }

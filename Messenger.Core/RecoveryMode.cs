@@ -4,6 +4,7 @@
     {
         MarkAsFailed,
         Block,
-        MakeLast
+        MakeLast,
+        Remove
     }
 }

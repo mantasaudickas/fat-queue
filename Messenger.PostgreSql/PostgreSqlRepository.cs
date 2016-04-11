@@ -84,11 +84,11 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
-        public void CreateMessage(int queueId, string contentType, string content, string context, int delayInSeconds, Guid identity)
+        public void CreateMessage(int queueId, string contentType, string content, string context, string contextFactory, int delayInSeconds, Guid identity)
         {
             const string sql =
                 "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity) " +
-                "VALUES(:QueueId, :ContentType, :Content, CURRENT_TIMESTAMP + INTERVAL '{0} second', :Context, :Identity)";
+                "VALUES(:QueueId, :ContentType, :Content, CURRENT_TIMESTAMP + INTERVAL '{0} second', :Context, :Identity, :ContextFactory)";
 
             var message = new
             {
@@ -98,6 +98,7 @@ namespace FatQueue.Messenger.PostgreSql
                 DelayInSeconds = delayInSeconds,
                 Context = context,
                 Identity = identity,
+                ContextFactory = contextFactory
             };
 
             using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
@@ -107,7 +108,7 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
-        public void InsertMessage(int queueId, string contentType, string content, string context, Guid identity)
+        public void InsertMessage(int queueId, string contentType, string content, string context, string contextFactory, Guid identity)
         {
             const string selectSql =
                 "SELECT StartDate " +
@@ -116,8 +117,8 @@ namespace FatQueue.Messenger.PostgreSql
                 "ORDER BY StartDate ASC";
 
             const string sql =
-                "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity) " +
-                "VALUES(:QueueId, :ContentType, :Content, :StartDate, :Context, :Identity)";
+                "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity, ContextFactory) " +
+                "VALUES(:QueueId, :ContentType, :Content, :StartDate, :Context, :Identity, :ContextFactory)";
 
             using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
             {
@@ -130,6 +131,7 @@ namespace FatQueue.Messenger.PostgreSql
                 parameters.Add("StartDate", createDate.GetValueOrDefault(DateTime.UtcNow));
                 parameters.Add("Context", context);
                 parameters.Add("Identity", identity);
+                parameters.Add("ContextFactory", contextFactory);
 
                 db.Connection.Execute(sql, parameters);
                 db.Complete();
@@ -204,7 +206,7 @@ namespace FatQueue.Messenger.PostgreSql
 
         public IList<MessageInfo> FetchQueueMessages(int queueId, int messageCount)
         {
-            const string sql = "select MessageId, Content, Context, StartDate, Identity " +
+            const string sql = "select MessageId, Content, Context, StartDate, Identity, ContextFactory " +
                                "from Messenger.Messages " +
                                "where QueueId = :queueId and StartDate <= CURRENT_TIMESTAMP " +
                                "order by StartDate asc " +
@@ -236,8 +238,8 @@ namespace FatQueue.Messenger.PostgreSql
             const string sql = "delete from Messenger.Messages where MessageId = :messageId";
 
             const string sqlArchive =
-                "insert into Messenger.CompletedMessages (ContentType, Content, CreateDate, Context, CompletedDate, Identity) " +
-                "select ContentType, Content, StartDate, Context, CURRENT_TIMESTAMP, Identity " +
+                "insert into Messenger.CompletedMessages (ContentType, Content, CreateDate, Context, CompletedDate, Identity, ContextFactory) " +
+                "select ContentType, Content, StartDate, Context, CURRENT_TIMESTAMP, Identity, ContextFactory " +
                 "from Messenger.Messages " +
                 "where MessageId = :messageId";
 
@@ -272,8 +274,8 @@ namespace FatQueue.Messenger.PostgreSql
         public void CopyMessageToFailed(int messageId, ITransaction transaction = null)
         {
             const string sql =
-                "insert into Messenger.FailedMessages (ContentType, Content, CreateDate, Error, FailedDate, Context, Identity) " +
-                "select m.ContentType, m.Content, m.StartDate, q.Error, CURRENT_TIMESTAMP, m.Context, m.Identity  " +
+                "insert into Messenger.FailedMessages (ContentType, Content, CreateDate, Error, FailedDate, Context, Identity, ContextFactory) " +
+                "select m.ContentType, m.Content, m.StartDate, q.Error, CURRENT_TIMESTAMP, m.Context, m.Identity, m.ContextFactory  " +
                 "from Messenger.Messages m " +
                 "join Messenger.Queues q on q.QueueId = m.QueueId " +
                 "where m.MessageId = :messageId ";
@@ -491,8 +493,8 @@ namespace FatQueue.Messenger.PostgreSql
 
         public void ReenqueueFailedMessages(int queueId, params Guid[] identity)
         {
-            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity]) " +
-                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity] " +
+            const string sql = "insert into Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, [Identity], ContextFactory) " +
+                               "select @queueId, ContentType, Content, SYSUTCDATETIME(), Context, [Identity], ContextFactory " +
                                "from Messenger.FailedMessages " +
                                "where [Identity] in @identity";
 

@@ -103,18 +103,37 @@ namespace FatQueue.Messenger.Core.Services
                     {
                         var messageContext = GetMessageContext(message.Context);
 
-                        state.MaxRetries = messageContext.Settings.MaxRetriesBeforeFail;
+                        state.MaxRetries = messageContext.Settings.MaxRetriesBeforeFail.GetValueOrDefault();
                         state.RecoveryMode = messageContext.Settings.RecoveryMode;
 
                         PublishSettings settings = messageContext.Settings;
                         using (var transaction = Repository.CreateProcessingTransaction(settings.JobIsolationLevel, settings.JobTimeout))
                         {
                             var executor = new ExpressionExecutor(_serializer, _jobActivator);
-                            executor.Execute(message.Content);
+
+                            if (!string.IsNullOrWhiteSpace(message.ContextFactory))
+                            {
+                                using (var context = executor.Execute<ExecutionContext>(message.ContextFactory))
+                                {
+                                    if (context != null)
+                                    {
+                                        context.Invoke(executor, message.Content);
+                                    }
+                                    else
+                                    {
+                                        executor.Execute(message.Content);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                executor.Execute(message.Content);
+                            }
 
                             if (transaction.TransactionStatus.HasValue)
                             {
                                 var transactionStatus = transaction.TransactionStatus.Value;
+
                                 if (transactionStatus == TransactionStatus.Aborted ||
                                     transactionStatus == TransactionStatus.InDoubt)
                                 {
@@ -161,6 +180,8 @@ namespace FatQueue.Messenger.Core.Services
                 // if there was at least one message successfull reset retry count
                 var retries = (state.ProcessedMessages > 0 ? 0 : queueInfo.Retries.GetValueOrDefault()) + 1;
 
+                Logger.Debug("Retries: {0}. State max retries: {1}. Recovery mode: {2}", 
+                    retries, state.MaxRetries, state.RecoveryMode);
                 if (retries >= state.MaxRetries && state.RecoveryMode != RecoveryMode.Block)
                 {
                     RecoverQueue(queueInfo.QueueId, state.LastMessageId, state.RecoveryMode);
@@ -168,7 +189,6 @@ namespace FatQueue.Messenger.Core.Services
                 else
                 {
                     var nextTryTime = DateTime.UtcNow.AddSeconds(ServerSettings.NextTryAfterFailInSeconds);
-
                     Repository.SetQueueFailure(queueInfo.QueueId, retries, state.Error, nextTryTime);
                 }
             }
@@ -190,6 +210,9 @@ namespace FatQueue.Messenger.Core.Services
                     case RecoveryMode.MarkAsFailed:
                         Repository.CopyMessageToFailed(messageId, transaction);
                         Repository.RemoveMessage(new [] {messageId}, transaction);
+                        break;
+                    case RecoveryMode.Remove:
+                        Repository.RemoveMessage(new[] { messageId }, transaction);
                         break;
                     default:
                         // should not happen
@@ -221,7 +244,7 @@ namespace FatQueue.Messenger.Core.Services
                 messageContext.Settings = new PublishSettings();
             }
 
-            if (messageContext.Settings.MaxRetriesBeforeFail == 0)
+            if (!messageContext.Settings.MaxRetriesBeforeFail.HasValue)
             {
                 messageContext.Settings.MaxRetriesBeforeFail = ServerSettings.MaxRetriesBeforeFail;
             }

@@ -14,8 +14,15 @@
         public void Execute(string expression)
         {
             var messageActionContainer = (MessageActionContainer)_serializer.Deserialize(expression, typeof(MessageActionContainer));
-            var messageAction = messageActionContainer.Deserialize(_serializer);
+            var messageAction = messageActionContainer.DeserializeAction(_serializer);
             messageAction.Perform(_jobActivator);
+        }
+
+        public TResult Execute<TResult>(string expression)
+        {
+            var messageActionContainer = (MessageActionContainer)_serializer.Deserialize(expression, typeof(MessageActionContainer));
+            var messageAction = messageActionContainer.DeserializeFunction(_serializer);
+            return messageAction.Perform<TResult>(_jobActivator);
         }
     }
 }
