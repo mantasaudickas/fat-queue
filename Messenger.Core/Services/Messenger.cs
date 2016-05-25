@@ -131,9 +131,20 @@ namespace FatQueue.Messenger.Core.Services
             try
             {
                 if (insert)
+                {
                     _repository.InsertMessage(queueId, contentType, content, contextFactory, context, taskIdentity);
+                }
                 else
-                    _repository.CreateMessage(queueId, contentType, content, contextFactory, context, delayInSeconds, taskIdentity);
+                {
+                    if (identity.HasValue)
+                    {
+                        _repository.CreateMessageIfNotExists(queueId, contentType, content, contextFactory, context, delayInSeconds, taskIdentity);
+                    }
+                    else
+                    {
+                        _repository.CreateMessage(queueId, contentType, content, contextFactory, context, delayInSeconds, taskIdentity);
+                    }
+                }
             }
             finally
             {

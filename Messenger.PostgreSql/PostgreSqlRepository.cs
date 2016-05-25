@@ -108,6 +108,31 @@ namespace FatQueue.Messenger.PostgreSql
             }
         }
 
+        public void CreateMessageIfNotExists(int queueId, string contentType, string content, string contextFactory, string context,
+            int delayInSeconds, Guid identity)
+        {
+            const string sql =
+                "INSERT INTO Messenger.Messages (QueueId, ContentType, Content, StartDate, Context, Identity) " +
+                "VALUES(:QueueId, :ContentType, :Content, CURRENT_TIMESTAMP + INTERVAL '{0} second', :Context, :Identity, :ContextFactory)";
+
+            var message = new
+            {
+                QueueId = queueId,
+                ContentType = contentType,
+                Content = content,
+                DelayInSeconds = delayInSeconds,
+                Context = context,
+                Identity = identity,
+                ContextFactory = contextFactory
+            };
+
+            using (var db = new FatQueueDatabase(_connectionFactory, TransactionScopeOption.Required))
+            {
+                db.Connection.Execute(string.Format(sql, delayInSeconds), message);
+                db.Complete();
+            }
+        }
+
         public void InsertMessage(int queueId, string contentType, string content, string context, string contextFactory, Guid identity)
         {
             const string selectSql =

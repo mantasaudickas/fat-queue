@@ -11,6 +11,7 @@ namespace FatQueue.Messenger.Core
         int CreateQueue(string queueName);
         void DeleteQueue(int queueId);
         void CreateMessage(int queueId, string contentType, string content, string contextFactory, string context, int delayInSeconds, Guid identity);
+        void CreateMessageIfNotExists(int queueId, string contentType, string content, string contextFactory, string context, int delayInSeconds, Guid identity);
         void InsertMessage(int queueId, string contentType, string content, string contextFactory, string context, Guid identity);
         QueueInfo LockQueue(string processName);
         void SetQueueFailure(int queueId, int retries, string formattedError, DateTime nextTryTime);
